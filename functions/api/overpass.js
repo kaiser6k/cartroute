@@ -8,13 +8,13 @@ export async function onRequestPost({ request }) {
   const body = await request.text();
   if (body.length > 4000) return new Response('query too large', { status: 413 });
   let last = 'no response';
-  for (const url of MIRRORS) {
+  for (const url of [...MIRRORS, ...MIRRORS]) {
     try {
       const r = await fetch(url, {
         method: 'POST',
         body,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CartRoute/1.0 (cartroute.pages.dev)', Accept: '*/*' },
-        signal: AbortSignal.timeout(40000),
+        signal: AbortSignal.timeout(20000),
       });
       if (r.ok) {
         const t = await r.text();
