@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "name": "cartroute-restricted-roads",
+  "properties": { "schema": 1, "note": "EXAMPLE FILE. The single feature below is made-up sample data to show the format; it is NOT a real restriction." },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "example": true,
+        "kind": "state-road-no-drive",
+        "reason": "EXAMPLE DATA (not real): state roads cannot be driven by golf carts, only crossed (s. 316.212(1)-(2)).",
+        "source": "EXAMPLE - would be FDOT RCI_Layers/State Roads",
+        "source_url": "https://gis.fdot.gov/arcgis/rest/services/RCI_Layers/FeatureServer/15",
+        "retrieved": "2026-10-10",
+        "confidence": "example",
+        "applies_to": ["golf"]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[-80.6020, 28.0300], [-80.5920, 28.0300]] }
+    }
+  ]
+}
