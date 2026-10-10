@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>CartRoute – golf cart &amp; LSV route planner (prototype)</title>
+<title>CartRoute – golf cart & LSV route planner (prototype)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--fg:#14202b;--mut:#5a6b7a;--line:#d5dde4;--pri:#0b7a4b;--pri-fg:#fff;--warn:#b45309;--warnbg:#fff4e0;--bad:#b91c1c;--badbg:#fdecec;--good:#0b7a4b;--goodbg:#e6f6ee;--blue:#1f6fd1}
@@ -57,7 +57,14 @@ h2.wz{font-size:24px;margin:14px 0 6px}
 .cartrow .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.cartrow .btns button{padding:8px 12px;min-height:40px;font-size:14px}
 button.danger{background:var(--badbg);color:var(--bad)}
 textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px}
-.addr{display:flex;gap:6px;align-items:stretch}.addr input{flex:1 1 0;min-width:0;width:auto}.addr button{flex:none;min-width:48px;min-height:48px;padding:8px 12px}.addr button.ico{padding:0;width:48px;display:inline-flex;align-items:center;justify-content:center}
+.acl{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1500;background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:min(50vh,330px);overflow:auto;margin:0;padding:4px;list-style:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:100%}
+.acl[hidden]{display:none}
+.acl li{min-height:48px;display:flex;gap:10px;align-items:center;padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--fg)}
+.acl li[aria-selected=true],.acl li:hover{background:var(--line)}
+.acl li.msg{cursor:default;color:var(--mut);font-size:14px}.acl li.msg:hover{background:none}
+.acl .ic{flex:none;width:26px;text-align:center;font-size:18px}.acl .tx{min-width:0;flex:1}
+.acl .p{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.acl .s{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addr{position:relative;display:flex;gap:6px;align-items:stretch}.addr input{flex:1 1 0;min-width:0;width:auto}.addr button{flex:none;min-width:48px;min-height:48px;padding:8px 12px}.addr button.ico{padding:0;width:48px;display:inline-flex;align-items:center;justify-content:center}
 .plist{list-style:none;padding:0;margin:8px 0}.plist li{margin:6px 0}
 .plist button.pl{width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);font-weight:500;padding:10px 12px;min-height:48px}
 .plist button.pl.on{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri) inset}
@@ -81,7 +88,7 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
 </section>
 
 <section class="card">
-  <h2>Pick start &amp; end</h2>
+  <h2>Pick start & end</h2>
   <div class="chips">
     <button class="chip" id="flyHome">🏠 Home area</button>
     <button class="chip" data-fly="palm">Palm Bay</button>
@@ -99,6 +106,7 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
   <div class="addr"><input type="text" id="aStart" placeholder="street, city"><button id="bLocStart" class="ico" type="button" aria-label="Use my location as start" title="Use my location as start"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button><button id="gStart" type="button">Find</button></div>
   <label for="aEnd">Or type a destination</label>
   <div class="addr"><input type="text" id="aEnd" placeholder="street, city"><button id="gEnd" type="button">Find</button></div>
+  <p class="mut">🔒 Address suggestions send what you type and the map center to Photon (komoot.io). Only your last 5 picks are saved, on this device.</p>
   <div id="map"></div>
   <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
   <div id="tileMsg" class="notice" style="display:none"></div>
@@ -119,7 +127,7 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
   <p class="mut" id="plFrom"></p>
   <ul class="plist" id="plList"></ul>
   <div id="placeDetail"></div>
-  <p class="mut">🔒 Place searches send only the map center (or your location, if you choose “My location”) to Photon and Overpass. Nothing is saved. Opening hours are shown as listed in OpenStreetMap and may be wrong.</p>
+  <p class="mut">🔒 Place searches (and suggestions while you type) send the text and the map center (or your location, if you choose “My location”) to Photon and Overpass. Nothing is saved. Opening hours are shown as listed in OpenStreetMap and may be wrong.</p>
 </details>
 
 <section class="card" id="resCard" style="display:none"><h2>Result</h2><div id="result"></div></section>
@@ -567,7 +575,7 @@ var PR = (function () {
   function defaultPrefs() { return { night: 'day', designatedLimit: 25, strict: false, allowCrossing: true, basemap: 'auto', tileProvider: 'esri' }; }
   function defaultProfile() {
     var c = defaultCart();
-    return { version: VERSION, name: '', carts: [c], activeCartId: c.id, prefs: defaultPrefs(), home: null, setupDone: false, createdAt: new Date().toISOString() };
+    return { version: VERSION, name: '', carts: [c], activeCartId: c.id, prefs: defaultPrefs(), home: null, recents: [], setupDone: false, createdAt: new Date().toISOString() };
   }
 
   function str(v, max) { return (typeof v === 'string' ? v : '').trim().slice(0, max || 80); }
@@ -586,6 +594,17 @@ var PR = (function () {
     if (!isFinite(lat) || !isFinite(lon) || lat < 24 || lat > 31.5 || lon < -88 || lon > -79.5) return null;
     return { key: h.key === 'palm' || h.key === 'cocoa' ? h.key : 'custom', label: str(h.label, 120) || 'Home', lat: lat, lon: lon };
   }
+  function normRecents(list) {
+    var out = [];
+    (Array.isArray(list) ? list : []).forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      var lat = Number(r.lat), lon = Number(r.lon), label = str(r.label, 140);
+      if (!label || !isFinite(lat) || !isFinite(lon) || lat < 24.4 || lat > 31.05 || lon < -87.7 || lon > -79.8) return;
+      if (out.some(function (o) { return o.label.toLowerCase() === label.toLowerCase(); })) return;
+      out.push({ label: label, lat: lat, lon: lon, icon: typeof r.icon === 'string' ? r.icon.slice(0, 4) : '📍' });
+    });
+    return out.slice(0, 5);
+  }
   // Fill defaults, drop junk, guarantee >=1 cart and a valid active cart.
   function normalize(p) {
     p = p && typeof p === 'object' ? p : {};
@@ -602,7 +621,7 @@ var PR = (function () {
         strict: pr.strict === true, allowCrossing: pr.allowCrossing !== false,
         basemap: ['auto', 'street', 'satellite', 'topo', 'dark'].indexOf(pr.basemap) >= 0 ? pr.basemap : 'auto',
         tileProvider: ['esri', 'carto', 'osm'].indexOf(pr.tileProvider) >= 0 ? pr.tileProvider : 'esri' },
-      home: normHome(p.home), setupDone: p.setupDone === true,
+      home: normHome(p.home), recents: normRecents(p.recents), setupDone: p.setupDone === true,
       createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString()
     };
   }
@@ -935,11 +954,112 @@ var PL = (function () {
     }
     return picked;
   }
-  return { CATEGORIES: CATEGORIES, RADII: RADII, MAX_RESULTS: MAX_RESULTS, category: category, buildQuery: buildQuery, classify: classify, parseElements: parseElements,
+  return { EMOJI: EMOJI, CATEGORIES: CATEGORIES, RADII: RADII, MAX_RESULTS: MAX_RESULTS, category: category, buildQuery: buildQuery, classify: classify, parseElements: parseElements,
     sortByDistance: sortByDistance, fmtDist: fmtDist, photonUrl: photonUrl, parsePhoton: parsePhoton, reachability: reachability, BADGE_ICON: BADGE_ICON,
     pickBatch: pickBatch, hav: hav, WALK_M: WALK_M, inFL: inFL };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = PL;
+
+</script>
+<script>
+/* ===== CartRoute type-ahead: pure logic (URL building, parsing, labels, dedupe, recents) ===== */
+var AC = (function () {
+  'use strict';
+  var FL = { s: 24.4, n: 31.05, w: -87.7, e: -79.8 };
+  var MIN_CHARS = 3, DEBOUNCE_MS = 300, LIMIT = 6, MAX_RECENTS = 5;
+  function inFL(lat, lon) { return isFinite(lat) && isFinite(lon) && lat >= FL.s && lat <= FL.n && lon >= FL.w && lon <= FL.e; }
+  function shouldSearch(q) { return typeof q === 'string' && q.trim().length >= MIN_CHARS; }
+
+  // Photon autocomplete URL: Florida bbox + optional location bias [lat, lon]
+  function suggestUrl(q, bias) {
+    var u = 'https://photon.komoot.io/api/?lang=en&limit=' + LIMIT + '&bbox=' + FL.w + ',' + FL.s + ',' + FL.e + ',' + FL.n;
+    if (bias && isFinite(bias[0]) && isFinite(bias[1])) u += '&lat=' + Number(bias[0]).toFixed(4) + '&lon=' + Number(bias[1]).toFixed(4);
+    return u + '&q=' + encodeURIComponent(String(q).trim());
+  }
+
+  function icon(key, value) {
+    if (key === 'place' || key === 'boundary') return '🏙️';
+    if (key === 'shop') return value === 'supermarket' || value === 'convenience' ? '🛒' : '🛍️';
+    if (key === 'amenity') return { cafe: '☕', restaurant: '🍽️', fast_food: '🍔', bar: '🍺', pub: '🍺', fuel: '⛽', charging_station: '🔌', pharmacy: '💊', parking: '🅿️' }[value] || '📍';
+    if (key === 'tourism') return value === 'hotel' || value === 'motel' ? '🏨' : '🏖️';
+    if (key === 'leisure' || key === 'natural') return '🌴';
+    if (key === 'highway') return '🛣️';
+    if (key === 'building' || key === 'place_house') return '🏠';
+    return '📍';
+  }
+
+  // Photon JSON -> suggestions (Florida only, deduped, max LIMIT)
+  function parse(json) {
+    var out = [], seen = {};
+    ((json && json.features) || []).forEach(function (f) {
+      var p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
+      if (!c || !inFL(Number(c[1]), Number(c[0]))) return;
+      if (p.state && p.state !== 'Florida') return;
+      var streetLine = [p.housenumber, p.street].filter(Boolean).join(' ');
+      var primary = p.name || streetLine || p.city || p.county;
+      if (!primary) return;
+      var city = p.city || p.locality || p.district || '';
+      var parts = [p.name && streetLine ? streetLine : '', city, p.county || '', p.state || ''].filter(function (x) { return x && x !== primary; });
+      parts = parts.filter(function (x, i) { return parts.indexOf(x) === i; });
+      var labelParts = [primary].concat([p.name && streetLine ? streetLine : '', city, p.state === 'Florida' ? 'FL' : p.state || '']
+        .filter(function (x) { return x && x !== primary; }));
+      var label = labelParts.filter(function (x, i) { return labelParts.indexOf(x) === i; }).join(', ');
+      var key = label.toLowerCase() + '|' + Number(c[1]).toFixed(3) + ',' + Number(c[0]).toFixed(3);
+      if (seen[key]) return; seen[key] = 1;
+      out.push({ id: (p.osm_type || '') + (p.osm_id || '') + ':' + out.length, lat: Number(c[1]), lon: Number(c[0]), primary: primary, secondary: parts.join(', '), label: label,
+        icon: icon(p.osm_key, p.osm_value), tags: p.osm_key ? (function () { var t = {}; t[p.osm_key] = p.osm_value; return t; })() : {}, address: [streetLine, city].filter(Boolean).join(', ') });
+    });
+    return out.slice(0, LIMIT);
+  }
+
+  // ----- recents (array of {label, lat, lon, icon}; newest first; max 5) -----
+  function cleanRecent(r) {
+    if (!r || typeof r !== 'object') return null;
+    var lat = Number(r.lat), lon = Number(r.lon), label = String(r.label || '').trim().slice(0, 140);
+    if (!label || !inFL(lat, lon)) return null;
+    return { label: label, lat: lat, lon: lon, icon: typeof r.icon === 'string' ? r.icon.slice(0, 4) : '📍' };
+  }
+  function normalizeRecents(list) {
+    var out = [];
+    (Array.isArray(list) ? list : []).forEach(function (r) { var c = cleanRecent(r); if (c && !out.some(function (o) { return o.label.toLowerCase() === c.label.toLowerCase(); })) out.push(c); });
+    return out.slice(0, MAX_RECENTS);
+  }
+  function addRecent(list, item) {
+    var c = cleanRecent(item); if (!c) return normalizeRecents(list);
+    var rest = normalizeRecents(list).filter(function (o) { return o.label.toLowerCase() !== c.label.toLowerCase() && !(Math.abs(o.lat - c.lat) < 1e-5 && Math.abs(o.lon - c.lon) < 1e-5); });
+    return [c].concat(rest).slice(0, MAX_RECENTS);
+  }
+  function clearRecents() { return []; }
+
+  // Rows shown in the dropdown. state: 'idle' | 'loading' | 'results' | 'empty' | 'error'
+  function buildRows(opts) {
+    var rows = [];
+    if (opts.state === 'idle') {
+      if (opts.withMyLocation) rows.push({ type: 'myloc', primary: 'My location', secondary: 'Use your current position', icon: '📡' });
+      (opts.recents || []).forEach(function (r) { rows.push({ type: 'recent', primary: r.label, secondary: 'Recent', icon: r.icon || '🕘', item: r }); });
+      if ((opts.recents || []).length) rows.push({ type: 'clear', primary: 'Clear recent searches', secondary: '', icon: '🗑️' });
+    } else if (opts.state === 'loading') rows.push({ type: 'msg', primary: 'Searching…', kind: 'loading' });
+    else if (opts.state === 'empty') rows.push({ type: 'msg', primary: 'No places found in Florida. Try fewer words, or tap the map.', kind: 'empty' });
+    else if (opts.state === 'error') rows.push({ type: 'msg', primary: 'Suggestions are unavailable right now. Press Find, or tap the map to choose the point.', kind: 'error' });
+    else if (opts.state === 'results') {
+      if (opts.withMyLocation && /^(my|cur|loc|here|near)/i.test(String(opts.query || '').trim())) rows.push({ type: 'myloc', primary: 'My location', secondary: 'Use your current position', icon: '📡' });
+      (opts.items || []).forEach(function (it) { rows.push({ type: 'item', primary: it.primary, secondary: it.secondary, icon: it.icon, item: it }); });
+    }
+    return rows;
+  }
+  function selectable(row) { return row.type !== 'msg'; }
+  // keyboard: next active index among selectable rows (wraps; -1 = none)
+  function moveActive(rows, cur, dir) {
+    var idx = []; rows.forEach(function (r, i) { if (selectable(r)) idx.push(i); });
+    if (!idx.length) return -1;
+    var pos = idx.indexOf(cur);
+    if (pos < 0) return dir > 0 ? idx[0] : idx[idx.length - 1];
+    return idx[(pos + dir + idx.length) % idx.length];
+  }
+  return { MIN_CHARS: MIN_CHARS, DEBOUNCE_MS: DEBOUNCE_MS, LIMIT: LIMIT, MAX_RECENTS: MAX_RECENTS, shouldSearch: shouldSearch, suggestUrl: suggestUrl, parse: parse,
+    icon: icon, addRecent: addRecent, normalizeRecents: normalizeRecents, clearRecents: clearRecents, buildRows: buildRows, moveActive: moveActive, selectable: selectable, inFL: inFL };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = AC;
 
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -947,7 +1067,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = PL;
 (function(){
 'use strict';
 var $=function(id){return document.getElementById(id)};
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&','<':'<','>':'>','"':'"'}[c]})}
 var ls=null;try{ls=window.localStorage}catch(e){ls=null}
 var Store=PR.createStore(ls);
 var profile=Store.load();           // null => first run => wizard
@@ -1094,7 +1214,7 @@ function geocode(q){
 }
 function homeFrag(h){var k=h?h.key:'';return'<div class="chips"><button class="chip homebtn" data-home="palm">Palm Bay</button><button class="chip homebtn" data-home="cocoa">Cocoa Beach</button></div>'+
  '<label>Or enter an address</label><div class="row"><input type="text" id="homeAddr" placeholder="street, city" style="flex:3" value="'+esc(k==='custom'?h.label:'')+'"><button id="homeFind" style="flex:1">Find</button></div>'+
- '<button id="homeGeo" style="width:100%;margin-top:8px">📡 Use my current location as home area</button><p class="mut">🔒 Your location stays in this browser and is saved only because you tap this button.</p>'+'<div id="homeSel" class="mut" style="margin-top:8px">'+(h?'Selected: <b>'+esc(h.label)+'</b>':'No home area selected yet.')+'</div><div class="err" id="homeErr"></div>'}
+ '<button id="homeGeo" style="width:100%;margin-top:8px">📡 Use my current location as home area</button><p class="mut">🔒 Your location stays in this browser and is saved only because you tap this button.</p>'+'<p class="mut">🔒 Suggestions send what you type and the map center to Photon (komoot.io).</p><div id="homeSel" class="mut" style="margin-top:8px">'+(h?'Selected: <b>'+esc(h.label)+'</b>':'No home area selected yet.')+'</div><div class="err" id="homeErr"></div>'}
 function bindHome(root,get,set){
   function show(){var h=get();$('homeSel').innerHTML=h?'Selected: <b>'+esc(h.label)+'</b>':'No home area selected yet.';
     root.querySelectorAll('.homebtn').forEach(function(b){b.classList.toggle('sel',!!h&&h.key===b.dataset.home)})}
@@ -1108,6 +1228,8 @@ function bindHome(root,get,set){
       if(!GEO.inFlorida(lat,lon)){$('homeErr').textContent=GEO.outsideMessage(lat,lon);return}
       set({key:'custom',label:'My location ('+lat.toFixed(3)+', '+lon.toFixed(3)+')',lat:lat,lon:lon});$('homeErr').textContent='';show();
     }).catch(function(e){$('homeErr').textContent=GEO.message(GEO.kindOf(e),location.protocol)}).then(function(){b.disabled=false})};
+  attachAutocomplete($('homeAddr'),{getRecents:function(){return profile&&profile.recents||[]},noRecent:true,
+    onPick:function(it){set({key:'custom',label:it.label,lat:it.lat,lon:it.lon});$('homeErr').textContent='';show()},onEnter:function(){$('homeFind').click()}});
   show();
 }
 
@@ -1158,7 +1280,7 @@ var editing=null; // cart draft being edited {id|null,data}
 function openSettings(){renderSettings();$('settings').classList.add('on')}
 function closeSettings(){$('settings').classList.remove('on');editing=null;afterProfileChange(false)}
 function renderSettings(msg){
-  var h='<div class="row" style="align-items:center"><h2 class="wz" style="margin:0">⚙️ Profile &amp; settings</h2><button id="sClose" style="flex:none">Done</button></div>';
+  var h='<div class="row" style="align-items:center"><h2 class="wz" style="margin:0">⚙️ Profile & settings</h2><button id="sClose" style="flex:none">Done</button></div>';
   if(!Store.persistent)h+='<div class="notice">Local storage is unavailable, so changes last only until this page is closed. Export a copy below.</div>';
   if(msg)h+='<div class="status ok">'+esc(msg)+'</div>';
   h+='<div class="card"><h2>You</h2><label>Name</label><input type="text" id="sName" maxlength="60" value="'+esc(profile.name)+'"></div>';
@@ -1444,8 +1566,6 @@ function checkOne(p){
     ch.querySelectorAll('[data-cat]').forEach(function(x){x.classList.toggle('sel',x===b)});$('plQuery').value='';plLastQ='';placeSearch('cat',b.dataset.cat)}});
   function runText(){var q=$('plQuery').value.trim();if(q.length<2||q===plLastQ)return;plLastQ=q;ch.querySelectorAll('[data-cat]').forEach(function(x){x.classList.remove('sel')});placeSearch('text',q)}
   $('plGo').onclick=function(){clearTimeout(plTimer);runText()};
-  $('plQuery').addEventListener('keydown',function(e){if(e.key==='Enter'){clearTimeout(plTimer);runText()}});
-  $('plQuery').addEventListener('input',function(){clearTimeout(plTimer);plTimer=setTimeout(function(){if($('plQuery').value.trim().length>=3)runText()},700)});
   $('plRadius').onchange=function(){var a=ch.querySelector('.sel');if(a)placeSearch('cat',a.dataset.cat)};
 })();
 
@@ -1498,6 +1618,93 @@ function show(r,g){
   out.innerHTML=h;
   $('resCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+
+// ---------- Autocomplete (Photon type-ahead) ----------
+var acOpen=null,acSeq=0,acCache={};
+document.addEventListener('pointerdown',function(e){if(acOpen&&!acOpen.contains(e.target))acOpen.close()});
+function acBias(){return lastPos&&GEO.inFlorida(lastPos[0],lastPos[1])?lastPos:mapCenter()}
+function rememberPlace(it){if(!profile||!profile.setupDone)return;profile.recents=AC.addRecent(profile.recents,{label:it.label,lat:it.lat,lon:it.lon,icon:it.icon});persist()}
+function attachAutocomplete(input,o){
+  var host=input.parentElement;host.style.position='relative';
+  var id='ac'+(++acSeq),ul=document.createElement('ul');ul.className='acl';ul.id=id+'-list';ul.setAttribute('role','listbox');ul.setAttribute('aria-label','Suggestions');ul.hidden=true;host.appendChild(ul);
+  input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-expanded','false');input.setAttribute('aria-controls',ul.id);input.setAttribute('autocomplete','off');input.setAttribute('autocapitalize','off');
+  var st={state:'idle',rows:[],active:-1,ctl:null,timer:null,seq:0,query:'',items:[],blur:null};
+  var api={contains:function(t){return t===input||ul.contains(t)},close:close};
+  function setActive(i){st.active=i;[].forEach.call(ul.children,function(li,k){li.setAttribute('aria-selected',k===i?'true':'false')});
+    input.setAttribute('aria-activedescendant',i>=0?id+'-o'+i:'');if(i>=0&&ul.children[i]&&ul.children[i].scrollIntoView)try{ul.children[i].scrollIntoView({block:'nearest'})}catch(e){}}
+  function render(){
+    st.rows=AC.buildRows({state:st.state,items:st.items,query:st.query,withMyLocation:!!o.withMyLocation,recents:o.getRecents?o.getRecents():[]});
+    ul.innerHTML='';
+    st.rows.forEach(function(r,i){
+      var li=document.createElement('li');li.id=id+'-o'+i;
+      if(r.type==='msg'){li.className='msg';li.setAttribute('role','presentation');li.setAttribute('aria-live','polite');li.textContent=r.primary}
+      else{li.setAttribute('role','option');li.setAttribute('aria-selected','false');
+        var ic=document.createElement('span');ic.className='ic';ic.setAttribute('aria-hidden','true');ic.textContent=r.icon||'📍';
+        var tx=document.createElement('div');tx.className='tx';var p=document.createElement('div');p.className='p';p.textContent=r.primary;tx.appendChild(p);
+        if(r.secondary){var s2=document.createElement('div');s2.className='s';s2.textContent=r.secondary;tx.appendChild(s2)}
+        li.appendChild(ic);li.appendChild(tx);
+        li.addEventListener('pointerdown',function(e){clearTimeout(st.blur);e.preventDefault()});
+        li.addEventListener('mousedown',function(e){e.preventDefault()});
+        li.addEventListener('click',function(){choose(i)});
+      }
+      ul.appendChild(li);
+    });
+    var show=st.rows.length>0;ul.hidden=!show;input.setAttribute('aria-expanded',show?'true':'false');
+    st.active=-1;input.setAttribute('aria-activedescendant','');
+    if(show)acOpen=api;
+  }
+  function close(){clearTimeout(st.timer);clearTimeout(st.blur);if(st.ctl){try{st.ctl.abort()}catch(e){}st.ctl=null}st.seq++;ul.hidden=true;input.setAttribute('aria-expanded','false');input.setAttribute('aria-activedescendant','');if(acOpen===api)acOpen=null}
+  function idle(){st.state='idle';st.items=[];st.query='';render()}
+  function run(q){
+    if(st.ctl){try{st.ctl.abort()}catch(e){}}
+    var ctl=new AbortController();st.ctl=ctl;var seq=++st.seq;st.query=q;st.state='loading';st.items=[];render();
+    var url=AC.suggestUrl(q,acBias());
+    var p=acCache[url]?Promise.resolve(acCache[url]):fetch(url,{headers:{'Accept':'application/json'},signal:ctl.signal}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){var l=AC.parse(j);acCache[url]=l;return l});
+    p.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
+     .catch(function(e){if(seq!==st.seq||(e&&e.name==='AbortError'))return;st.state='error';st.items=[];render()});
+  }
+  function pick(it){
+    input.value=it.label;close();
+    if(!o.noRecent)rememberPlace(it);
+    o.onPick(it);
+  }
+  function choose(i){
+    var r=st.rows[i];if(!r||r.type==='msg')return;
+    if(r.type==='myloc'){close();input.value='';if(o.onMyLocation)o.onMyLocation();return}
+    if(r.type==='clear'){if(profile){profile.recents=[];persist()}idle();return}
+    pick(r.item);
+  }
+  input.addEventListener('input',function(){
+    clearTimeout(st.timer);var q=input.value;
+    if(!q.trim()){if(st.ctl){try{st.ctl.abort()}catch(e){}}st.seq++;idle();return}
+    if(!AC.shouldSearch(q)){close();return}
+    st.timer=setTimeout(function(){run(q.trim())},AC.DEBOUNCE_MS);
+  });
+  input.addEventListener('focus',function(){clearTimeout(st.blur);if(!input.value.trim())idle();else if(AC.shouldSearch(input.value)&&st.rows.length&&st.state==='results')render()});
+  input.addEventListener('blur',function(){clearTimeout(st.blur);st.blur=setTimeout(close,200)});
+  input.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      if(ul.hidden){if(!input.value.trim())idle();else if(AC.shouldSearch(input.value))run(input.value.trim());return}
+      setActive(AC.moveActive(st.rows,st.active,e.key==='ArrowDown'?1:-1));
+    }else if(e.key==='Enter'){
+      if(!ul.hidden&&st.active>=0){e.preventDefault();choose(st.active)}
+      else{clearTimeout(st.timer);close();if(o.onEnter){e.preventDefault();o.onEnter()}}
+    }else if(e.key==='Escape'){if(!ul.hidden){e.preventDefault();close()}}
+  });
+  return api;
+}
+function afterPick(which,it){var ll=[it.lat,it.lon];setPoint(which,ll);if(map)map.setView(ll,15)}
+attachAutocomplete($('aStart'),{withMyLocation:true,getRecents:function(){return profile&&profile.recents||[]},
+  onPick:function(it){afterPick('start',it);mode='end';hi()},onMyLocation:function(){$('bLocStart').click()},onEnter:function(){$('gStart').click()}});
+attachAutocomplete($('aEnd'),{getRecents:function(){return profile&&profile.recents||[]},onPick:function(it){afterPick('end',it)},onEnter:function(){$('gEnd').click()}});
+attachAutocomplete($('plQuery'),{getRecents:function(){return profile&&profile.recents||[]},
+  onPick:function(it){
+    var cl=PL.classify(it.tags),origin=mapCenter();searchOrigin=origin;
+    var p={id:'ac/'+it.id,source:'photon',lat:it.lat,lon:it.lon,name:it.primary,cat:cl.cat,emoji:PL.EMOJI[cl.cat]||'📍',label:cl.label,address:it.address||'',hours:'',phone:'',website:'',
+      distanceM:PL.hav(origin,[it.lat,it.lon]),reach:{state:'unchecked',text:'Tap to check if your cart can get there'}};
+    plLastQ=it.label;places=[p];placeSel=null;renderPlaces();plMsg('Showing your pick. Press Search for more results.');selectPlace(p.id,true);
+  },onEnter:function(){$('plGo').click()}});
 
 // ---------- Start ----------
 if(!profile||!profile.setupDone){profile=null;openWizard(false);profile=PR.defaultProfile();profile.setupDone=false}
