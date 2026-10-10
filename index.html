@@ -1404,6 +1404,7 @@ function setPoint(which,ll,label){
   m.on('dragend',function(){var p=m.getLatLng();pts[which]=[p.lat,p.lng];saveTrip()});
   if(which==='start')mStart=m;else mEnd=m;
   if(label)(which==='start'?$('aStart'):$('aEnd')).value=label;
+  saveTrip();
 }
 function wireGeo(btn,input,which){btn.onclick=function(){
   var q=input.value.trim();if(!q)return;btn.disabled=true;busy('Looking up address…');
@@ -1697,7 +1698,7 @@ function attachAutocomplete(input,o){
   });
   return api;
 }
-function afterPick(which,it){var ll=[it.lat,it.lon];setPoint(which,ll);if(map)map.setView(ll,15)}
+function afterPick(which,it){var ll=[it.lat,it.lon];setPoint(which,ll,it.label);if(map)map.setView(ll,15)}
 attachAutocomplete($('aStart'),{withMyLocation:true,getRecents:function(){return profile&&profile.recents||[]},
   onPick:function(it){afterPick('start',it);mode='end';hi()},onMyLocation:function(){$('bLocStart').click()},onEnter:function(){$('gStart').click()}});
 attachAutocomplete($('aEnd'),{getRecents:function(){return profile&&profile.recents||[]},onPick:function(it){afterPick('end',it)},onEnter:function(){$('gEnd').click()}});
@@ -1714,7 +1715,7 @@ if(!profile||!profile.setupDone){profile=null;openWizard(false);profile=PR.defau
 else persist();
 $('storeNotice').style.display=Store.persistent?'none':'block';
 renderMain();
-(function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea)$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
+(function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea&&!(t.ea===t.sa&&t.s&&t.e&&(t.s[0]!==t.e[0]||t.s[1]!==t.e[1])))$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
 ['aStart','aEnd'].forEach(function(id){$(id).addEventListener('input',saveTrip)});
 window.__cartroute={getTile:function(){return tileChainList[tileIdx]&&tileChainList[tileIdx].key},getProfile:function(){return profile},store:Store,getPts:function(){return pts},getPlaces:function(){return places},isFollowing:function(){return watchId!==null}};
 })();
