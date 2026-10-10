@@ -577,7 +577,7 @@ var GC = (function () {
   }
 
   // Overpass query for a bbox around two points, padded; enforces the area cap.
-  var MAX_SPAN_KM = 5;
+  var MAX_SPAN_KM = 12;
   function bboxFor(a, b, padM) {
     padM = padM || 700;
     var span = hav(a, b) / 1000;
