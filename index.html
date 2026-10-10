@@ -1396,11 +1396,12 @@ $('switchMap').onclick=cycleMap;
 $('flyHome').onclick=function(){var v=homeView();if(map)map.setView([v[0],v[1]],v[2])};
 function hi(){$('bStart').classList.toggle('sel',mode==='start');$('bEnd').classList.toggle('sel',mode==='end')}
 $('bStart').onclick=function(){mode='start';hi()};$('bEnd').onclick=function(){mode='end';hi()};hi();
+function saveTrip(){try{localStorage.setItem('cartroute.trip',JSON.stringify({s:pts.start,e:pts.end,sa:$('aStart').value,ea:$('aEnd').value}))}catch(x){}}
 function setPoint(which,ll,label){
-  pts[which]=ll;if(!mapOk)return;
+  pts[which]=ll;saveTrip();if(!mapOk)return;
   var m=which==='start'?mStart:mEnd;if(m)map.removeLayer(m);
   m=L.marker(ll,{draggable:true,title:which}).addTo(map).bindTooltip(which==='start'?'Start':'End',{permanent:true,direction:'top',offset:[-15,-10]});
-  m.on('dragend',function(){var p=m.getLatLng();pts[which]=[p.lat,p.lng]});
+  m.on('dragend',function(){var p=m.getLatLng();pts[which]=[p.lat,p.lng];saveTrip()});
   if(which==='start')mStart=m;else mEnd=m;
   if(label)(which==='start'?$('aStart'):$('aEnd')).value=label;
 }
@@ -1576,6 +1577,8 @@ $('go').onclick=function(){
   computeStatus();
   var out=$('result'),card=$('resCard');card.style.display='block';
   if(!status.ok){out.innerHTML='<div class="status bad"><b class="t">Fix your cart first</b>'+esc(status.label)+'</div>';return}
+  var need=[];['start','end'].forEach(function(w){var inp=w==='start'?$('aStart'):$('aEnd');if(!pts[w]&&inp.value.trim())need.push(geocode(inp.value.trim()).then(function(r){setPoint(w,[+r.lat,+r.lon])}))});
+  if(need.length){busy('Looking up addresses…');Promise.all(need).then(function(){busy('');$('go').click()}).catch(function(e){busy('');out.innerHTML='<div class="status bad">'+esc(e.message)+'</div>'});return}
   if(!pts.start||!pts.end){out.innerHTML='<div class="status bad">Set both a start and an end point on the map or by address.</div>';return}
   var bb=GC.bboxFor(pts.start,pts.end,700);
   if(bb.tooBig){out.innerHTML='<div class="status bad">Those points are '+bb.span_km.toFixed(1)+' km apart. This prototype is limited to '+GC.MAX_SPAN_KM+' km to keep map downloads fast.</div>';return}
@@ -1711,6 +1714,8 @@ if(!profile||!profile.setupDone){profile=null;openWizard(false);profile=PR.defau
 else persist();
 $('storeNotice').style.display=Store.persistent?'none':'block';
 renderMain();
+(function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea)$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
+['aStart','aEnd'].forEach(function(id){$(id).addEventListener('input',saveTrip)});
 window.__cartroute={getTile:function(){return tileChainList[tileIdx]&&tileChainList[tileIdx].key},getProfile:function(){return profile},store:Store,getPts:function(){return pts},getPlaces:function(){return places},isFollowing:function(){return watchId!==null}};
 })();
 </script>
