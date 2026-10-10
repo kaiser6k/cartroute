@@ -1281,7 +1281,7 @@ function bindHome(root,get,set){
 
 // ---------- Wizard ----------
 var wz=null; // {step, draft, rerun}
-var STEPS=7;
+var WZ_IDX=[0,1,2,3,4,6],STEPS=WZ_IDX.length;
 function openWizard(rerun){
   var d=JSON.parse(JSON.stringify(rerun?profile:PR.defaultProfile()));
   if(!rerun){d.home=null}
@@ -1290,29 +1290,29 @@ function openWizard(rerun){
 }
 function wcart(){return PR.activeCart(wz.draft)}
 function renderWizard(){
-  var s=wz.step,d=wz.draft,c=wcart(),h='';
+  var s=wz.step,k=WZ_IDX[s],d=wz.draft,c=wcart(),h='';
   h+='<div class="mut">Step '+(s+1)+' of '+STEPS+'</div><div class="prog"><i style="width:'+Math.round((s+1)/STEPS*100)+'%"></i></div>';
   var titles=['Welcome to CartRoute','Your cart','How fast does it go?','Equipment','Driving preferences','Home area','Review'];
-  h+='<h2 class="wz">'+titles[s]+'</h2>';
-  if(s===0)h+='<p>Let\'s set up your account so routes only use roads your cart may legally use in Florida. It takes about a minute. Everything is stored on this device only.</p><label>What should we call you?</label><input type="text" id="wName" maxlength="60" placeholder="Your first name" value="'+esc(d.name)+'">';
-  if(s===1)h+='<p>What do you drive?</p>'+typeFrag(c);
-  if(s===2)h+=speedFrag(c);
-  if(s===3)h+='<p>Tick everything your cart has. Be honest; this decides which roads you can use.</p>'+equipFrag(c);
-  if(s===4)h+=prefsFrag(d.prefs);
-  if(s===5)h+='<p>Pick the area the map should open on.</p>'+homeFrag(d.home);
-  if(s===6){var st=PR.statusFor(GC,d);h+='<div class="status '+(st.ok?'ok':'bad')+'">'+statusHTML(st)+'</div><h3 style="margin-bottom:0">What\'s missing to be an LSV?</h3><ul class="check">'+checklistHTML(st)+'</ul><p class="mut">Name: '+esc(d.name||'(not set)')+' · Cart: '+esc(PR.cartLabel(c))+' · Home: '+esc(d.home?d.home.label:'(not set)')+'</p><div class="disc">Rules are simplified. Check local ordinances and signs.</div>'}
+  h+='<h2 class="wz">'+titles[k]+'</h2>';
+  if(k===0)h+='<p>Let\'s set up your account so routes only use roads your cart may legally use in Florida. It takes about a minute. Everything is stored on this device only.</p><label>What should we call you?</label><input type="text" id="wName" maxlength="60" placeholder="Your first name" value="'+esc(d.name)+'">';
+  if(k===1)h+='<p>What do you drive?</p>'+typeFrag(c);
+  if(k===2)h+=speedFrag(c);
+  if(k===3)h+='<p>Tick everything your cart has. Be honest; this decides which roads you can use.</p>'+equipFrag(c);
+  if(k===4)h+=prefsFrag(d.prefs);
+  if(k===5)h+='<p>Pick the area the map should open on.</p>'+homeFrag(d.home);
+  if(k===6){var st=PR.statusFor(GC,d);h+='<div class="status '+(st.ok?'ok':'bad')+'">'+statusHTML(st)+'</div><h3 style="margin-bottom:0">What\'s missing to be an LSV?</h3><ul class="check">'+checklistHTML(st)+'</ul><p class="mut">Name: '+esc(d.name||'(not set)')+' · Cart: '+esc(PR.cartLabel(c))+' · Home: '+esc(d.home?d.home.label:'(not set)')+'</p><div class="disc">Rules are simplified. Check local ordinances and signs.</div>'}
   h+='<div class="err" id="wErr"></div><div class="nav">'+(s>0?'<button id="wBack">Back</button>':(wz.rerun?'<button id="wCancel">Cancel</button>':''))+'<button class="pri" id="wNext">'+(s===STEPS-1?'Finish':'Next')+'</button></div>';
   var root=$('wizIn');root.innerHTML=h;root.scrollTop=0;$('wizard').scrollTop=0;
-  if(s===0)$('wName').addEventListener('input',function(){d.name=this.value});
-  if(s===1||s===2||s===3)bindFields(root,c);
-  if(s===4)bindPrefs(root,d.prefs);
-  if(s===5)bindHome(root,function(){return d.home},function(v){d.home=v});
+  if(k===0)$('wName').addEventListener('input',function(){d.name=this.value});
+  if(k===1||k===2||k===3)bindFields(root,c);
+  if(k===4)bindPrefs(root,d.prefs);
+  if(k===5)bindHome(root,function(){return d.home},function(v){d.home=v});
   if($('wBack'))$('wBack').onclick=function(){wz.step--;renderWizard()};
   if($('wCancel'))$('wCancel').onclick=closeWizard;
   $('wNext').onclick=function(){
     var err='';
-    if(s===2){var sp=Number(c.speed);if(!(sp>0&&sp<=60))err='Enter a top speed between 1 and 60 mph.'}
-    if(s===5&&!d.home)err='Pick Palm Bay, Cocoa Beach, or find an address.';
+    if(k===2){var sp=Number(c.speed);if(!(sp>0&&sp<=60))err='Enter a top speed between 1 and 60 mph.'}
+    if(k===5&&!d.home)err='Pick Palm Bay, Cocoa Beach, or find an address.';
     if(err){$('wErr').textContent=err;return}
     if(s<STEPS-1){wz.step++;renderWizard();return}
     var v=PR.validate(d);if(!v.ok){$('wErr').textContent=v.errors.join(' ');return}
