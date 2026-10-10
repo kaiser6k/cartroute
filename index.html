@@ -27,7 +27,33 @@ button.pri{background:var(--pri);color:var(--pri-fg);width:100%;font-size:18px;m
 button.sel{outline:3px solid var(--blue)}
 button.chip{padding:8px 12px;min-height:40px;font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
-#map{height:min(60vh,460px);border-radius:12px;border:1px solid var(--line);margin-top:10px}
+html,body{height:100%;overflow:hidden}
+#map{position:fixed;inset:0;height:100%;width:100%;z-index:0;margin:0}
+.leaflet-top{margin-top:calc(var(--topH,178px) + 6px)}
+.leaflet-bottom{margin-bottom:var(--sheetH,170px)}
+.leaflet-control-zoom a{width:40px!important;height:40px!important;line-height:40px!important}
+#topcard{position:fixed;left:8px;right:8px;top:max(8px,env(safe-area-inset-top));z-index:1200;max-width:620px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 8px 8px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+#topcard .brand{display:flex;align-items:center;gap:6px;min-height:44px}
+#topcard .brand b{flex:1;font-size:17px;white-space:nowrap}
+#topcard .chipbtn{max-width:56%;min-height:40px;padding:6px 10px}
+#topcard .gear{min-width:44px;min-height:44px;padding:4px;background:transparent}
+.route-in{display:flex;gap:8px;align-items:stretch}
+.route-in .rail{flex:none;width:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 0}
+.route-in .rail .dot{width:12px;height:12px;border-radius:50%;border:3px solid var(--blue);background:var(--card)}
+.route-in .rail .ln{flex:1;border-left:3px dotted var(--mut);margin:3px 0;min-height:14px}
+.route-in .rail .pin{font-size:18px;line-height:1;color:var(--bad)}
+.route-in .fields{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.route-in .addr input{min-height:48px;padding:10px 12px;font-size:16px}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-width:700px;margin:0 auto;background:var(--bg);border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.28);height:var(--sh,170px);max-height:92vh;display:flex;flex-direction:column;transition:height .2s;padding-bottom:env(safe-area-inset-bottom)}
+#sheet.drag{transition:none}
+#sheet .grab{flex:none;height:30px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;border:0;background:transparent;width:100%;min-height:30px;padding:0}
+#sheet .grab i{width:44px;height:5px;border-radius:3px;background:var(--mut);opacity:.6}
+#sheet .peek{flex:none;padding:0 12px 8px}
+#sheet .peek button.pri{margin-top:0}
+#peekSum{font-size:14px;color:var(--mut);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sheet .sbody{flex:1;overflow:auto;padding:0 12px 24px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#sheet .card{margin:10px 0}
+.modes{display:flex;gap:8px}.modes button{flex:1}
 .status{border-radius:12px;padding:12px;margin-top:10px;font-size:15px}
 .status.ok{background:var(--goodbg);border:1px solid var(--good)}.status.bad{background:var(--badbg);border:1px solid var(--bad)}
 .status b.t{display:block;font-size:17px;margin-bottom:4px}
@@ -76,43 +102,55 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
 </style>
 </head>
 <body>
-<div class="top"><h1>🛺 CartRoute</h1><button class="chipbtn" id="cartChip" title="Switch cart">…</button><button class="gear" id="gear" aria-label="Profile and settings">⚙️</button></div>
-<main>
-<div id="storeNotice" class="notice" style="display:none"><b>Heads up:</b> this browser is blocking local storage (private mode?). Your profile is kept only until you close or reload this page. Use Settings → Export to save a copy.</div>
-<div class="disc"><b>Simplified rules – not legal advice.</b> Florida golf carts may only use roads your <i>local</i> government has designated and signed, and cities/counties can add restrictions or ban LSVs on certain roads. This prototype guesses from map data (speed limits, tags). <b>Always check local ordinances and posted signs.</b> Routes marked “assumed” are unverified.</div>
+<!-- layout: map-forward (v3) -->
+<div id="map"></div>
+<div id="topcard">
+  <div class="brand"><b>🛺 CartRoute</b><button class="chipbtn" id="cartChip" title="Switch cart">…</button><button class="gear" id="gear" aria-label="Profile and settings">⚙️</button></div>
+  <div class="route-in">
+    <div class="rail" aria-hidden="true"><span class="dot"></span><span class="ln"></span><span class="pin">📍</span></div>
+    <div class="fields">
+      <div class="addr"><input type="text" id="aStart" placeholder="Choose start" aria-label="Start address"><button id="bLocStart" class="ico" type="button" aria-label="Use my location as start" title="Use my location as start"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button><button id="gStart" type="button">Find</button></div>
+      <div class="addr"><input type="text" id="aEnd" placeholder="Choose destination" aria-label="Destination address"><button id="gEnd" type="button">Find</button></div>
+    </div>
+  </div>
+</div>
+<div id="sheet" data-state="peek">
+  <button class="grab" id="grab" type="button" aria-label="Expand or collapse panel"><i></i></button>
+  <div class="peek">
+    <button class="pri" id="go">Find legal route</button>
+    <div id="busy"></div>
+    <div id="peekSum"></div>
+  </div>
+  <div class="sbody" id="sbody">
+<section class="card" id="resCard" style="display:none"><h2>Result</h2><div id="result"></div></section>
 
 <section class="card">
+  <div id="storeNotice" class="notice" style="display:none"><b>Heads up:</b> this browser is blocking local storage (private mode?). Your profile is kept only until you close or reload this page. Use Settings → Export to save a copy.</div>
   <div id="status" class="status"></div>
   <details><summary>What's missing to qualify as an LSV?</summary><ul class="check" id="checklist"></ul></details>
   <p class="mut" id="prefLine"></p>
 </section>
 
 <section class="card">
-  <h2>Pick start & end</h2>
+  <h2>Map & position</h2>
+  <div class="modes">
+    <button id="bStart">📍 Tap map: start</button>
+    <button id="bEnd">🏁 Tap map: end</button>
+  </div>
   <div class="chips">
     <button class="chip" id="flyHome">🏠 Home area</button>
     <button class="chip" data-fly="palm">Palm Bay</button>
     <button class="chip" data-fly="cocoa">Cocoa Beach</button>
+    <button class="chip" id="bFollow" type="button">▶ Follow me</button>
   </div>
-  <div class="row">
-    <button id="bStart">📍 Tap map: start</button>
-    <button id="bEnd">🏁 Tap map: end</button>
-  </div>
-  <div class="chips"><button class="chip" id="bFollow" type="button">▶ Follow me</button></div>
   <label class="chk"><input type="checkbox" id="followReroute"> Reroute from my position as I move (needs a destination)</label>
   <div id="geoMsg" class="status bad" style="display:none"></div>
   <p class="mut">🔒 Your location stays in this browser. It is only saved if you choose “Use my current location as home area”.</p>
-  <label for="aStart">Or type a start address</label>
-  <div class="addr"><input type="text" id="aStart" placeholder="street, city"><button id="bLocStart" class="ico" type="button" aria-label="Use my location as start" title="Use my location as start"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button><button id="gStart" type="button">Find</button></div>
-  <label for="aEnd">Or type a destination</label>
-  <div class="addr"><input type="text" id="aEnd" placeholder="street, city"><button id="gEnd" type="button">Find</button></div>
   <p class="mut">🔒 Address suggestions send what you type and the map center to Photon (komoot.io). Only your last 5 picks are saved, on this device.</p>
-  <div id="map"></div>
   <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
   <div id="tileMsg" class="notice" style="display:none"></div>
-  <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span></div>
-  <button class="pri" id="go">Find legal route</button>
-  <div id="busy"></div>
+  <label class="chk"><input type="checkbox" id="showRestricted"> Show restricted roads overlay <span class="mut" id="restrNote"></span></label>
+  <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span><span><i style="border-color:#b00020;border-top-style:dashed"></i>restricted (overlay, if loaded)</span></div>
 </section>
 
 <details class="card" id="placesBox">
@@ -130,10 +168,10 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
   <p class="mut">🔒 Place searches (and suggestions while you type) send the text and the map center (or your location, if you choose “My location”) to Photon and Overpass. Nothing is saved. Opening hours are shown as listed in OpenStreetMap and may be wrong.</p>
 </details>
 
-<section class="card" id="resCard" style="display:none"><h2>Result</h2><div id="result"></div></section>
-
+<div class="disc"><b>Simplified rules – not legal advice.</b> Florida golf carts may only use roads your <i>local</i> government has designated and signed, and cities/counties can add restrictions or ban LSVs on certain roads. This prototype guesses from map data (speed limits, tags). <b>Always check local ordinances and posted signs.</b> Routes marked “assumed” are unverified.</div>
 <p class="mut">Map data © OpenStreetMap contributors (ODbL). Roads from the Overpass API; addresses from Nominatim. Statutes: Fla. Stat. 316.212, 316.2122, 320.01(22),(41). Prototype for testing only.</p>
-</main>
+  </div>
+</div>
 
 <div class="full" id="wizard"><div class="in" id="wizIn"></div></div>
 <div class="full" id="settings"><div class="in" id="setIn"></div></div>
@@ -251,6 +289,12 @@ var GC = (function () {
     return n; // mph, or bare number: assumed mph in Florida
   }
 
+  // OSM ref on Florida state roads looks like "FL 507", "US 192", "SR A1A", "I 95", sometimes several joined by ';'
+  function isStateRoad(tags) {
+    var ref = String(tags.ref || '');
+    return /(^|;)\s*(US|SR|FL|I)[ -]?\d+/i.test(ref) || /(^|;)\s*(SR|FL)?[ -]?A1A\b/i.test(ref) || /^state road\b/i.test(String(tags.name || ''));
+  }
+
   function isTagYes(v) { return v === 'yes' || v === 'designated' || v === 'permissive'; }
 
   // returns {allowed, basis, speed, reason, crossable, name, hw}
@@ -279,10 +323,12 @@ var GC = (function () {
     if (tags.golf_cart === 'no' && rules.cls === 'golf') { r.reason = 'tagged golf_cart=no'; r.drivable = false; return r; }
     if (priv) { r.reason = 'private/no motor vehicle access'; return r; }
     if (svc) { r.reason = 'driveway/parking aisle'; return r; }
-    if (hw === 'trunk') { r.reason = 'trunk road (high-speed): not allowed'; return r; }
+    if (hw === 'trunk') { r.reason = 'trunk road (high-speed): not allowed'; return r; } // conservative project choice (README); statute would allow an LSV on a trunk road posted <= 35
 
     if (rules.cls === 'golf') {
       if (tagged) { r.allowed = true; r.basis = 'tagged'; return r; }
+      // s. 316.212(1): golf carts may use only designated county roads / municipal streets; state roads can only be crossed (316.212(2)).
+      if (isStateRoad(tags)) { r.reason = 'state road: a golf cart may only cross it at an approved crossing, not drive along it'; return r; }
       if (!rules.planning) { r.reason = 'not tagged golf_cart=yes in OSM (strict mode)'; return r; }
       if (r.speed <= rules.limit) { r.allowed = true; r.basis = speedBasis === 'posted' ? 'posted-designation-assumed' : 'assumed'; return r; }
       r.reason = r.speed + ' mph' + (speedBasis === 'assumed' ? ' (assumed)' : '') + ' is above the ' + rules.limit + ' mph cutoff';
@@ -546,7 +592,7 @@ var GC = (function () {
 
   return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, planRoute: planRoute,
     bboxFor: bboxFor, overpassQuery: overpassQuery, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
-    MAX_SPAN_KM: MAX_SPAN_KM };
+    MAX_SPAN_KM: MAX_SPAN_KM, isStateRoad: isStateRoad };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GC;
 
@@ -1718,6 +1764,46 @@ renderMain();
 (function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea&&!(t.ea===t.sa&&t.s&&t.e&&(t.s[0]!==t.e[0]||t.s[1]!==t.e[1])))$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
 ['aStart','aEnd'].forEach(function(id){$(id).addEventListener('input',saveTrip)});
 window.__cartroute={getTile:function(){return tileChainList[tileIdx]&&tileChainList[tileIdx].key},getProfile:function(){return profile},store:Store,getPts:function(){return pts},getPlaces:function(){return places},isFollowing:function(){return watchId!==null}};
+
+// ---------- bottom sheet + layout ----------
+(function(){
+var sh=$('sheet'),grab=$('grab'),states=['peek','half','full'];
+function hFor(st){var vh=window.innerHeight;return st==='peek'?170:st==='half'?Math.round(vh*0.5):Math.round(vh*0.88)}
+function relayout(){var tc=$('topcard');if(tc)document.documentElement.style.setProperty('--topH',tc.offsetHeight+'px');if(map)try{map.invalidateSize()}catch(e){}}
+function setState(st){sh.setAttribute('data-state',st);var h=hFor(st);document.documentElement.style.setProperty('--sh',h+'px');document.documentElement.style.setProperty('--sheetH',Math.min(h,Math.round(window.innerHeight*0.5))+'px');setTimeout(relayout,230)}
+window.sheetState=setState;
+grab.addEventListener('click',function(){if(grab._dragged){grab._dragged=false;return}var i=states.indexOf(sh.getAttribute('data-state'));setState(states[(i+1)%3])});
+var y0=null,h0=0;
+grab.addEventListener('pointerdown',function(e){y0=e.clientY;h0=sh.offsetHeight;grab._dragged=false;sh.classList.add('drag');try{grab.setPointerCapture(e.pointerId)}catch(x){}});
+grab.addEventListener('pointermove',function(e){if(y0==null)return;var d=y0-e.clientY;if(Math.abs(d)>6)grab._dragged=true;var h=Math.max(130,Math.min(window.innerHeight*0.92,h0+d));document.documentElement.style.setProperty('--sh',h+'px')});
+function end(e){if(y0==null)return;sh.classList.remove('drag');var h=sh.offsetHeight;y0=null;if(!grab._dragged)return;var best='peek',bd=1e9;states.forEach(function(st){var d=Math.abs(hFor(st)-h);if(d<bd){bd=d;best=st}});setState(best)}
+grab.addEventListener('pointerup',end);grab.addEventListener('pointercancel',end);
+window.addEventListener('resize',function(){setState(sh.getAttribute('data-state'));relayout()});
+window.addEventListener('orientationchange',function(){setTimeout(function(){setState(sh.getAttribute('data-state'))},200)});
+// peek summary + auto-expand when a result appears
+var res=$('result');
+function sum(){var t=(res.textContent||'').replace(/\s+/g,' ').trim();$('peekSum').textContent=t?t.slice(0,110):'';if(t&&sh.getAttribute('data-state')==='peek')setState('half')}
+if(window.MutationObserver)new MutationObserver(sum).observe(res,{childList:true,subtree:true});
+// tapping the map collapses a big sheet so the map stays visible
+if(map)map.on('click',function(){if(sh.getAttribute('data-state')==='full')setState('peek')});
+setState('peek');relayout();setTimeout(relayout,400);
+})();
+
+// ---------- optional restricted-roads overlay (restricted.geojson next to index.html; display only, router does not use it yet) ----------
+(function(){
+var box=$('showRestricted'),note=$('restrNote'),layer=null,loaded=false,tried=false;
+function load(){
+  if(tried||!map||!window.fetch||!window.L)return Promise.resolve();tried=true;
+  return fetch('restricted.geojson?v='+Date.now()).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(gj){
+    layer=L.geoJSON(gj,{style:function(){return{color:'#b00020',weight:5,opacity:.85,dashArray:'8 6'}},onEachFeature:function(f,l){
+      var p=f.properties||{};l.bindPopup('<b>'+(p.example?'EXAMPLE – ':'')+'Restricted road</b><br>'+esc(p.reason||'')+'<br><span class="mut">Source: '+esc(p.source||'?')+' · '+esc(p.retrieved||'?')+' · confidence: '+esc(p.confidence||'?')+'</span>')}});
+    loaded=true;note.textContent='('+(gj.features||[]).length+' segment'+((gj.features||[]).length===1?'':'s')+')';
+  }).catch(function(){note.textContent='(not available here)';box.disabled=true;box.checked=false});
+}
+box.addEventListener('change',function(){load().then(function(){if(!layer||!map)return;if(box.checked)layer.addTo(map);else map.removeLayer(layer)})});
+try{if(localStorage.getItem('cartroute.showRestricted')==='1'){box.checked=true;box.dispatchEvent(new Event('change'))}}catch(e){}
+box.addEventListener('change',function(){try{localStorage.setItem('cartroute.showRestricted',box.checked?'1':'0')}catch(e){}});
+})();
 })();
 </script>
 </body>
