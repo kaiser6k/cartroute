@@ -149,8 +149,10 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
   <p class="mut">🔒 Address suggestions send what you type and the map center to Photon (komoot.io). Only your last 5 picks are saved, on this device.</p>
   <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
   <div id="tileMsg" class="notice" style="display:none"></div>
+  <label class="chk"><input type="checkbox" id="showLegal"> Show road legality on map <span class="mut" id="legalNote"></span></label>
+  <div class="mut" id="legalHint" style="display:none;font-size:12px">Likely legal based on map data; local rules may differ.</div>
   <label class="chk"><input type="checkbox" id="showRestricted"> Show restricted roads overlay <span class="mut" id="restrNote"></span></label>
-  <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span><span><i style="border-color:#b00020;border-top-style:dashed"></i>restricted (overlay, if loaded)</span></div>
+  <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span><span class="mut">Likely legal based on map data; local rules may differ</span><span><i style="border-color:#b00020;border-top-style:dashed"></i>restricted (overlay, if loaded)</span></div>
 </section>
 
 <details class="card" id="placesBox">
@@ -590,9 +592,34 @@ var GC = (function () {
     return '[out:json][timeout:40];way["highway"]["highway"!~"^(footway|steps|pedestrian|corridor|elevator|bridleway|proposed|construction|platform|raceway)$"](' + box + ');(._;>;);out body qt;';
   }
 
+
+  // ---------- Viewport road legality (display layer) ----------
+  var LEGALITY_MIN_ZOOM = 14;
+  // bounds = {s,w,n,e}; returns {ok, bb} or {ok:false, reason:'zoom'|'span'}
+  function viewportPlan(bounds, zoom) {
+    if (!(zoom >= LEGALITY_MIN_ZOOM)) return { ok: false, reason: 'zoom' };
+    var span = Math.max(hav([bounds.s, bounds.w], [bounds.n, bounds.e]), 0) / 1000;
+    if (span > MAX_SPAN_KM) return { ok: false, reason: 'span', span_km: span };
+    return { ok: true, span_km: span, bb: { s: bounds.s, w: bounds.w, n: bounds.n, e: bounds.e } };
+  }
+  // Classify every drivable way in an Overpass response; basis -> style group.
+  function classifyViewport(json, rules) {
+    var g = parseOverpass(json), out = [];
+    g.ways.forEach(function (w) {
+      var c = classifyWay(w.tags, rules);
+      if (!c.drivable && !c.allowed && !(c.hw && !FORBIDDEN[c.hw] && !PATHLIKE[c.hw])) return;
+      var coords = [];
+      w.nodes.forEach(function (n) { var p = g.nodes.get(n); if (p) coords.push(p); });
+      if (coords.length < 2) return;
+      var basis = c.allowed ? c.basis : 'illegal';
+      out.push({ coords: coords, name: c.name, speed: c.speed, basis: basis, reason: c.reason, allowed: c.allowed });
+    });
+    return out;
+  }
+
   return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, planRoute: planRoute,
     bboxFor: bboxFor, overpassQuery: overpassQuery, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
-    MAX_SPAN_KM: MAX_SPAN_KM, isStateRoad: isStateRoad };
+    MAX_SPAN_KM: MAX_SPAN_KM, viewportPlan: viewportPlan, classifyViewport: classifyViewport, LEGALITY_MIN_ZOOM: LEGALITY_MIN_ZOOM, isStateRoad: isStateRoad };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GC;
 
@@ -1787,6 +1814,48 @@ if(window.MutationObserver)new MutationObserver(sum).observe(res,{childList:true
 // tapping the map collapses a big sheet so the map stays visible
 if(map)map.on('click',function(){if(sh.getAttribute('data-state')==='full')setState('peek')});
 setState('peek');relayout();setTimeout(relayout,400);
+})();
+
+
+// ---------- optional road-legality layer for the visible map (display only; uses GC.classifyWay via GC.classifyViewport) ----------
+(function(){
+var box=$('showLegal'),note=$('legalNote'),hint=$('legalHint'),layer=null,timer=null,token=0,lastKey='';
+function clear(){if(layer)layer.clearLayers()}
+function say(t){note.textContent=t?'('+t+')':''}
+function style(s){var c=colorFor({basis:s.basis});c.weight=4;c.opacity=.75;return c}
+function render(json,st){
+  clear();if(!layer)layer=L.layerGroup();if(!map.hasLayer(layer))layer.addTo(map);
+  GC.classifyViewport(json,st.rules).forEach(function(s){
+    var pl=L.polyline(s.coords,style(s)).addTo(layer);
+    pl.bindTooltip(s.name+(s.speed?' · '+s.speed+' mph':'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason:s.basis+' (likely legal; local rules may differ)'));
+    if(pl.bringToBack)pl.bringToBack();
+  });
+}
+function refresh(force){
+  if(!box.checked||!map)return;
+  var st=status;if(!st||!st.ok||!st.rules){clear();say('pick an eligible cart');hint.style.display='block';return}
+  hint.style.display='block';
+  var b=map.getBounds(),pl=GC.viewportPlan({s:b.getSouth(),w:b.getWest(),n:b.getNorth(),e:b.getEast()},map.getZoom());
+  if(!pl.ok){clear();lastKey='';say(pl.reason==='zoom'?'Zoom in to see road legality':'Zoom in more: area too large');return}
+  var q=GC.overpassQuery(pl.bb),key=q+'|'+JSON.stringify(st.rules);
+  if(!force&&key===lastKey)return;
+  var my=++token;say('loading…');
+  overpassFetch(q,'road legality').then(function(j){
+    if(my!==token||!box.checked)return;busy('');lastKey=key;render(j,status&&status.ok?status:st);say('');
+  }).catch(function(e){if(my!==token)return;busy('');say('could not load roads; pan or toggle to retry')});
+}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){refresh(false)},600)}
+box.addEventListener('change',function(){
+  try{localStorage.setItem('cartroute.showLegal',box.checked?'1':'0')}catch(e){}
+  token++;
+  if(!box.checked){clear();if(layer&&map&&map.hasLayer(layer))map.removeLayer(layer);say('');hint.style.display='none';lastKey='';return}
+  refresh(true);
+});
+if(map)map.on('moveend',sched);
+// refetch/recolor when cart or profile changes
+var origAfter=afterProfileChange;
+afterProfileChange=function(r){origAfter(r);lastKey='';if(box.checked)sched()};
+try{if(localStorage.getItem('cartroute.showLegal')==='1'){box.checked=true;box.dispatchEvent(new Event('change'))}}catch(e){}
 })();
 
 // ---------- optional restricted-roads overlay (restricted.geojson next to index.html; display only, router does not use it yet) ----------
