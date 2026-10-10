@@ -1272,7 +1272,7 @@ function bindHome(root,get,set){
     getPos().then(function(p){
       var lat=p.coords.latitude,lon=p.coords.longitude;
       if(!GEO.inFlorida(lat,lon)){$('homeErr').textContent=GEO.outsideMessage(lat,lon);return}
-      set({key:'custom',label:'My location ('+lat.toFixed(3)+', '+lon.toFixed(3)+')',lat:lat,lon:lon});$('homeErr').textContent='';show();
+      set({key:'custom',label:'My location ('+lat.toFixed(3)+', '+lon.toFixed(3)+')',lat:lat,lon:lon});$('homeErr').textContent='';show();$('homeErr').style.color='#0a7a3d';$('homeErr').textContent='✓ Home area set to your location.';try{if(document.activeElement)document.activeElement.blur();$('homeSel').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
     }).catch(function(e){$('homeErr').textContent=GEO.message(GEO.kindOf(e),location.protocol)}).then(function(){b.disabled=false})};
   attachAutocomplete($('homeAddr'),{getRecents:function(){return profile&&profile.recents||[]},noRecent:true,
     onPick:function(it){set({key:'custom',label:it.label,lat:it.lat,lon:it.lon});$('homeErr').textContent='';show()},onEnter:function(){$('homeFind').click()}});
@@ -1470,19 +1470,19 @@ var MIRRORS=['https://overpass.private.coffee/api/interpreter','https://overpass
 var cache={};
 function overpassFetch(q,label){
   var key=q;if(cache[key])return Promise.resolve(cache[key]);
-  var attempts=[];for(var round=0;round<2;round++)MIRRORS.forEach(function(m){attempts.push(m)});
+  var attempts=[];if(/^https?:$/.test(location.protocol))attempts.push('/api/overpass');for(var round=0;round<2;round++)MIRRORS.forEach(function(m){attempts.push(m)});
   var i=0,lastErr;
   function next(){
     if(i>=attempts.length){
       var hint=location.protocol==='file:'?' Opened from a file, only one map-data server (overpass.private.coffee) works without a Referer, and it is sometimes busy. Try again in a minute, or host the app on https (see README).':' Try again in a minute, or pick points closer together.';
       return Promise.reject(new Error('All map-data servers failed or timed out ('+(lastErr&&lastErr.message||'unknown')+').'+hint));
     }
-    var url=attempts[i],n=++i;busy('Loading '+(label||'road data')+'… (server '+(((n-1)%MIRRORS.length)+1)+', try '+n+')');
+    var url=attempts[i],n=++i;busy('Loading '+(label||'road data')+'… (try '+n+' of '+attempts.length+')');
     var ctl=new AbortController(),t=setTimeout(function(){ctl.abort()},45000);
     return fetch(url,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl.signal})
       .then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
       .then(function(j){if(!j.elements)throw new Error('bad response');if(j.remark&&/timed out|out of memory/i.test(j.remark)&&!j.elements.length)throw new Error('server remark: '+j.remark);cache[key]=j;return j})
-      .catch(function(e){clearTimeout(t);lastErr=e.name==='AbortError'?new Error('timeout'):e;return new Promise(function(r){setTimeout(r,n<=MIRRORS.length?300:1500)}).then(next)});
+      .catch(function(e){clearTimeout(t);lastErr=e.name==='AbortError'?new Error('timeout'):e;return new Promise(function(r){setTimeout(r,300)}).then(next)});
   }
   return next();
 }
