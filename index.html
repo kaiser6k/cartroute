@@ -1197,6 +1197,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = PL;
 var AC = (function () {
   'use strict';
   var US_BOXES = [[24.3, 49.5, -125.2, -66.8], [51.0, 71.6, -180, -129.5], [18.7, 22.5, -160.6, -154.6]]; // contiguous US, AK, HI (same as states.js)
+  var GX = typeof GEO !== 'undefined' ? GEO : (typeof require === 'function' ? require('./geo.js') : null);
   var STX = typeof ST !== 'undefined' ? ST : (typeof require === 'function' ? require('./states.js') : null);
   var MIN_CHARS = 3, DEBOUNCE_MS = 300, LIMIT = 6, MAX_RECENTS = 5;
   function inFL(lat, lon) { return isFinite(lat) && isFinite(lon) && US_BOXES.some(function (b) { return lat >= b[0] && lat <= b[1] && lon >= b[2] && lon <= b[3]; }); }
@@ -1222,7 +1223,7 @@ var AC = (function () {
 
   function stateAbbr(n) { var t = STX && n ? STX.T.filter(function (x) { return x.n === n; })[0] : null; return t ? t.a : n || ''; }
   // Photon JSON -> suggestions (US only, deduped, max LIMIT)
-  function parse(json) {
+  function parseAll(json) {
     var out = [], seen = {};
     ((json && json.features) || []).forEach(function (f) {
       var p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
@@ -1242,7 +1243,112 @@ var AC = (function () {
       out.push({ id: (p.osm_type || '') + (p.osm_id || '') + ':' + out.length, lat: Number(c[1]), lon: Number(c[0]), primary: primary, secondary: parts.join(', '), label: label,
         icon: icon(p.osm_key, p.osm_value), tags: p.osm_key ? (function () { var t = {}; t[p.osm_key] = p.osm_value; return t; })() : {}, address: [streetLine, city].filter(Boolean).join(', ') });
     });
-    return out.slice(0, LIMIT);
+    return out;
+  }
+  function parse(json) { return parseAll(json).slice(0, LIMIT); }
+
+
+  // ===== Nearby place-NAME search (Publix, Dunkin, Walmart ...): Photon + Nominatim + Overpass, merged, deduped, nearest first =====
+  var NEAR_KM = 40, MAX_NEAR = 8;
+  function isNameQuery(q) { return !!GX && GX.isPlaceName(q) && String(q || '').trim().length >= MIN_CHARS; }
+  // Cleanest core name: "local publix grocery store" -> "publix"
+  function coreName(q) { var v = GX ? GX.orderedVariants(q) : [String(q || '').trim()]; return (v[0] || '').trim(); }
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function hav(a, b, c, d) {
+    var R = 6371, k = Math.PI / 180, dLat = (c - a) * k, dLon = (d - b) * k;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a * k) * Math.cos(c * k) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function fmtMi(km) { var mi = km / 1.609344; return mi < 0.1 ? Math.round(km * 3280.84) + ' ft' : mi.toFixed(1) + ' mi'; }
+  function bboxAround(ref, km) {
+    var dLat = km / 111.2, dLon = km / (111.2 * Math.max(0.2, Math.cos(ref[0] * Math.PI / 180)));
+    return [ref[1] - dLon, ref[0] - dLat, ref[1] + dLon, ref[0] + dLat]; // minLon, minLat, maxLon, maxLat
+  }
+  function f4(n) { return Number(n).toFixed(4); }
+  function photonNearUrl(q, ref, km) {
+    var b = bboxAround(ref, km || NEAR_KM);
+    return 'https://photon.komoot.io/api/?lang=en&limit=20&lat=' + f4(ref[0]) + '&lon=' + f4(ref[1]) + '&bbox=' + b.map(f4).join(',') + '&q=' + encodeURIComponent(String(q).trim());
+  }
+  function nominatimNearUrl(q, ref, km) {
+    var b = bboxAround(ref, km || NEAR_KM); // viewbox = left,top,right,bottom
+    return 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=15&countrycodes=us&bounded=1&viewbox=' + [b[0], b[3], b[2], b[1]].map(f4).join(',') + '&q=' + encodeURIComponent(String(q).trim());
+  }
+  function overpassNameQuery(name, ref, radiusM) {
+    var rx = String(name).trim().replace(/[^A-Za-z0-9 ]/g, '.').replace(/\s+/g, ' ').replace(/"/g, '');
+    var r = Math.max(1000, Math.min(40000, Math.round(radiusM || NEAR_KM * 1000))), ar = '(around:' + r + ',' + Number(ref[0]).toFixed(5) + ',' + Number(ref[1]).toFixed(5) + ');';
+    return '[out:json][timeout:25];(nwr["name"~"' + rx + '",i]["shop"]' + ar + 'nwr["name"~"' + rx + '",i]["amenity"]' + ar + 'nwr["brand"~"' + rx + '",i]' + ar + ');out tags center 60;';
+  }
+  function streetOf(hn, road) { return [hn, road].filter(Boolean).join(' '); }
+  function mk(src, primary, lat, lon, address, tags, ic, city) {
+    return { id: src + ':' + norm(primary) + ':' + f4(lat) + ',' + f4(lon), source: src, lat: lat, lon: lon, primary: primary, address: address, city: city || '', icon: ic, tags: tags || {} };
+  }
+  function parseNominatimNear(arr) {
+    var out = [];
+    (Array.isArray(arr) ? arr : []).forEach(function (r) {
+      var lat = Number(r.lat), lon = Number(r.lon); if (!inFL(lat, lon)) return;
+      var a = r.address || {}, name = r.name || a[r.type] || String(r.display_name || '').split(',')[0].trim(); if (!name) return;
+      var city = a.city || a.town || a.village || a.hamlet || a.suburb || '';
+      var tags = {}; if (r.category) tags[r.category] = r.type;
+      out.push(mk('nominatim', name, lat, lon, [streetOf(a.house_number, a.road), city].filter(Boolean).join(', '), tags, icon(r.category, r.type), city));
+    });
+    return out;
+  }
+  var NOT_PLACE = { parking: 1, bicycle_parking: 1, parking_space: 1, parking_entrance: 1, bench: 1, waste_basket: 1 };
+  function parseOverpassNear(json) {
+    var out = [];
+    ((json && json.elements) || []).forEach(function (e) {
+      var t = e.tags; if (!t) return;
+      var lat = e.type === 'node' ? e.lat : e.center && e.center.lat, lon = e.type === 'node' ? e.lon : e.center && e.center.lon;
+      if (!inFL(lat, lon)) return;
+      if (NOT_PLACE[t.amenity]) return;
+      var name = t.name || t.brand; if (!name) return;
+      var key = t.shop ? 'shop' : t.amenity ? 'amenity' : t.tourism ? 'tourism' : t.leisure ? 'leisure' : '', tags = {}; if (key) tags[key] = t[key];
+      out.push(mk('osm', name, lat, lon, [streetOf(t['addr:housenumber'], t['addr:street']), t['addr:city']].filter(Boolean).join(', '), tags, icon(key, t[key]), t['addr:city']));
+    });
+    return out;
+  }
+  function parsePhotonNear(json) {
+    return parseAll(json).map(function (x) { return mk('photon', x.primary, x.lat, x.lon, x.address, x.tags, x.icon, ''); });
+  }
+  // Merge several candidate lists: keep name matches inside maxKm of ref, dedupe (same name within ~120 m, or same name + same street address), nearest first.
+  function mergeRank(lists, ref, core, maxKm) {
+    var first = norm(core).split(' ')[0] || '', all = [];
+    lists.forEach(function (l) { (l || []).forEach(function (x) { all.push(x); }); });
+    var items = [];
+    all.forEach(function (x) {
+      var d = hav(ref[0], ref[1], x.lat, x.lon);
+      if (maxKm && d > maxKm) return;
+      if (first && norm(x.primary).indexOf(first) < 0) return;
+      var y = {}; for (var k in x) y[k] = x[k]; y.distKm = d; y.distLabel = fmtMi(d);
+      var dup = items.filter(function (o) {
+        if (norm(o.primary) !== norm(y.primary)) return false;
+        return hav(o.lat, o.lon, y.lat, y.lon) < 0.12 || (o.address && norm(o.address) === norm(y.address));
+      })[0];
+      if (dup) { if (!dup.address && y.address) { dup.address = y.address; } return; }
+      items.push(y);
+    });
+    items.sort(function (a, b) { return a.distKm - b.distKm; });
+    return items.slice(0, MAX_NEAR).map(function (it, i) {
+      var addr = it.address || '';
+      it.secondary = addr; it.label = [it.primary, addr].filter(Boolean).join(', '); it.id = it.id + ':' + i;
+      return it;
+    });
+  }
+  // io = { json(url) -> Promise<json> (Photon), nominatim(url) -> Promise<json> or null to skip (host throttles 1 req/s), overpass(queryString) -> Promise<json> }
+  // opts.deep: also ask Overpass even when the other sources found enough. Resolves {items, errors, ok} (rejects never).
+  function searchNearby(q, ref, io, opts) {
+    opts = opts || {};
+    var core = coreName(q), errors = 0, okSrc = 0;
+    function guard(p, parser) { return Promise.resolve().then(function () { return p; }).then(function (j) { if (j == null) return []; okSrc++; return parser(j); }).catch(function () { errors++; return []; }); }
+    var jobs = [guard(io.json && io.json(photonNearUrl(core, ref)), parsePhotonNear)];
+    if (io.nominatim) jobs.push(guard(io.nominatim(nominatimNearUrl(core, ref)), parseNominatimNear));
+    return Promise.all(jobs).then(function (ls) {
+      var m = mergeRank(ls, ref, core, NEAR_KM);
+      if (io.overpass && (opts.deep || m.length < 3)) {
+        return guard(io.overpass(overpassNameQuery(core, ref)), parseOverpassNear).then(function (ol) { return mergeRank(ls.concat([ol]), ref, core, NEAR_KM); });
+      }
+      return m;
+    }).then(function (items) { return { items: items, errors: errors, ok: okSrc > 0 }; });
   }
 
   // ----- recents (array of {label, lat, lon, icon}; newest first; max 5) -----
@@ -1276,7 +1382,7 @@ var AC = (function () {
     else if (opts.state === 'error') rows.push({ type: 'msg', primary: 'Suggestions are unavailable right now. Press Find, or tap the map to choose the point.', kind: 'error' });
     else if (opts.state === 'results') {
       if (opts.withMyLocation && /^(my|cur|loc|here|near)/i.test(String(opts.query || '').trim())) rows.push({ type: 'myloc', primary: 'My location', secondary: 'Use your current position', icon: '📡' });
-      (opts.items || []).forEach(function (it) { rows.push({ type: 'item', primary: it.primary, secondary: it.secondary, icon: it.icon, item: it }); });
+      (opts.items || []).forEach(function (it) { rows.push({ type: 'item', primary: it.primary + (it.distLabel ? ' · ' + it.distLabel : ''), secondary: it.secondary, icon: it.icon, item: it }); });
     }
     return rows;
   }
@@ -1290,6 +1396,8 @@ var AC = (function () {
     return idx[(pos + dir + idx.length) % idx.length];
   }
   return { MIN_CHARS: MIN_CHARS, DEBOUNCE_MS: DEBOUNCE_MS, LIMIT: LIMIT, MAX_RECENTS: MAX_RECENTS, shouldSearch: shouldSearch, suggestUrl: suggestUrl, parse: parse,
+    isNameQuery: isNameQuery, coreName: coreName, fmtMi: fmtMi, bboxAround: bboxAround, photonNearUrl: photonNearUrl, nominatimNearUrl: nominatimNearUrl, overpassNameQuery: overpassNameQuery,
+    parseNominatimNear: parseNominatimNear, parseOverpassNear: parseOverpassNear, parsePhotonNear: parsePhotonNear, mergeRank: mergeRank, searchNearby: searchNearby, NEAR_KM: NEAR_KM,
     icon: icon, addRecent: addRecent, normalizeRecents: normalizeRecents, clearRecents: clearRecents, buildRows: buildRows, moveActive: moveActive, selectable: selectable, inFL: inFL };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = AC;
@@ -1437,18 +1545,42 @@ function nominatim(q){
 // Photon (CORS-friendly, no key, works from file://) first; Nominatim only as a fallback on real http(s) pages,
 // because it rejects requests that have no Referer (which file:// pages cannot send).
 function geoBias(){return pts&&pts.start?{lat:pts.start[0],lon:pts.start[1]}:(profile&&profile.home?{lat:profile.home.lat,lon:profile.home.lon}:null)}
+// Reference point for by-name searches: the start point if set, else the map center (which falls back to home).
+function refPoint(){if(pts&&pts.start)return[pts.start[0],pts.start[1]];return mapCenter()}
+// Nominatim policy: max 1 request/second. All Nominatim calls go through this gate; autocomplete skips it when the queue is long.
+var nomNext=0;
+function nomGate(maxWait){var now=Date.now(),w=Math.max(0,nomNext-now);if(maxWait!=null&&w>maxWait)return null;nomNext=now+w+1100;return new Promise(function(r){setTimeout(r,w)})}
+function nearIO(opt){
+  opt=opt||{};
+  return{
+    json:function(u){return fetch(u,{headers:{'Accept':'application/json'},signal:opt.signal}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()})},
+    nominatim:location.protocol==='file:'?null:function(u){var g=nomGate(opt.maxWait);if(!g)return null;return g.then(function(){return fetch(u,{headers:{'Accept':'application/json'},signal:opt.signal})}).then(function(r){if(!r)return null;if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()})},
+    overpass:function(q){return overpassFetch(q,'places',true)}
+  };
+}
+function findNearbyByName(q,opt){return AC.searchNearby(q,refPoint(),nearIO(opt),opt)}
 function photon(q){
-  var bi=geoBias(),h=bi?'&lat='+bi.lat+'&lon='+bi.lon:'';
+  var bi=geoBias()||(function(){var r=refPoint();return{lat:r[0],lon:r[1]}})(),h=bi?'&lat='+bi.lat+'&lon='+bi.lon:'';
   var url='https://photon.komoot.io/api/?lang=en&limit=10'+h+'&q='+encodeURIComponent(q);
   return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){return GEO.pickPhoton(j.features,q,bi,GEO.isPlaceName(q)?60:0)});
 }
 function nominatimNear(q){
   var bi=geoBias(),vb=bi?'&viewbox='+[bi.lon-0.5,bi.lat+0.5,bi.lon+0.5,bi.lat-0.5].join(','):'';
   var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us'+vb+'&q='+encodeURIComponent(q);
-  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()}).then(function(a){return a.length?{lat:+a[0].lat,lon:+a[0].lon}:null});
+  return nomGate().then(function(){return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()}).then(function(a){return a.length?{lat:+a[0].lat,lon:+a[0].lon}:null})});
 }
 // Try each cleaned-up wording on Photon, then (on real http(s) pages) Nominatim, which finds exact street addresses Photon lacks.
 function geocode(q){
+  if(AC.isNameQuery(q)){
+    // A plain place name (no house number): find the nearest match to the start point / map center first; fall back to address lookup if nothing is nearby.
+    return findNearbyByName(q,{deep:true}).then(function(res){
+      if(res.items.length){var it=res.items[0];return{lat:it.lat,lon:it.lon,label:it.label}}
+      return geocodeAddr(q);
+    });
+  }
+  return geocodeAddr(q);
+}
+function geocodeAddr(q){
   var wait=Math.max(0,lastGeo+1100-Date.now());lastGeo=Date.now()+wait;
   var NF='Address not found in the US. Try adding the city, or tap the map instead.';
   var NET='Address search could not be reached right now. Tap the map to choose your points instead.';
@@ -1703,7 +1835,7 @@ function setPoint(which,ll,label){
 }
 function wireGeo(btn,input,which){btn.onclick=function(){
   var q=input.value.trim();if(!q)return;btn.disabled=true;busy('Looking up address…');
-  geocode(q).then(function(r){var ll=[+r.lat,+r.lon];setPoint(which,ll);if(map)map.setView(ll,15);busy('');}).catch(function(e){busy('');alert(e.message)}).then(function(){btn.disabled=false});
+  geocode(q).then(function(r){var ll=[+r.lat,+r.lon];setPoint(which,ll,r.label);if(map)map.setView(ll,15);busy('');}).catch(function(e){busy('');alert(e.message)}).then(function(){btn.disabled=false});
 }}
 wireGeo($('gStart'),$('aStart'),'start');wireGeo($('gEnd'),$('aEnd'),'end');
 function busy(t){var b=$('busy');b.style.display=t?'block':'none';b.textContent=t}
@@ -1717,7 +1849,7 @@ function afterProfileChange(recenter){
 // Order matters: overpass-api.de answers 406 to browser requests that carry no Referer (file:// pages), so private.coffee goes first.
 var MIRRORS=['https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass-api.de/api/interpreter'];
 var cache={};
-function overpassFetch(q,label){
+function overpassFetch(q,label,quiet){
   var key=q;if(cache[key])return Promise.resolve(cache[key]);
   var attempts=[];if(/^https?:$/.test(location.protocol))attempts.push('/api/overpass');for(var round=0;round<2;round++)MIRRORS.forEach(function(m){attempts.push(m)});
   var i=0,lastErr;
@@ -1726,7 +1858,7 @@ function overpassFetch(q,label){
       var hint=location.protocol==='file:'?' Opened from a file, only one map-data server (overpass.private.coffee) works without a Referer, and it is sometimes busy. Try again in a minute, or host the app on https (see README).':' Try again in a minute, or pick points closer together.';
       return Promise.reject(new Error('All map-data servers failed or timed out ('+(lastErr&&lastErr.message||'unknown')+').'+hint));
     }
-    var url=attempts[i],n=++i;busy('Loading '+(label||'road data')+'… (try '+n+' of '+attempts.length+')');
+    var url=attempts[i],n=++i;if(!quiet)busy('Loading '+(label||'road data')+'… (try '+n+' of '+attempts.length+')');
     var ctl=new AbortController(),t=setTimeout(function(){ctl.abort()},45000);
     return fetch(url,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl.signal})
       .then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
@@ -1963,6 +2095,13 @@ function attachAutocomplete(input,o){
   function run(q){
     if(st.ctl){try{st.ctl.abort()}catch(e){}}
     var ctl=new AbortController();st.ctl=ctl;var seq=++st.seq;st.query=q;st.state='loading';st.items=[];render();
+    if(o.nearby&&AC.isNameQuery(q)){
+      var ref=refPoint(),ck='n|'+q.toLowerCase()+'|'+ref[0].toFixed(2)+','+ref[1].toFixed(2);
+      var pn=acCache[ck]?Promise.resolve(acCache[ck]):findNearbyByName(q,{signal:ctl.signal,maxWait:2500}).then(function(res){if(!res.ok&&!res.items.length)throw new Error('all sources failed');if(res.items.length)acCache[ck]=res.items;return res.items});
+      pn.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
+       .catch(function(e){if(seq!==st.seq||(e&&e.name==='AbortError'))return;st.state='error';st.items=[];render()});
+      return;
+    }
     var url=AC.suggestUrl(q,acBias());
     var p=acCache[url]?Promise.resolve(acCache[url]):fetch(url,{headers:{'Accept':'application/json'},signal:ctl.signal}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){var l=AC.parse(j);acCache[url]=l;return l});
     p.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
@@ -2000,9 +2139,9 @@ function attachAutocomplete(input,o){
   return api;
 }
 function afterPick(which,it){var ll=[it.lat,it.lon];setPoint(which,ll,it.label);if(map)map.setView(ll,15)}
-attachAutocomplete($('aStart'),{withMyLocation:true,getRecents:function(){return profile&&profile.recents||[]},
+attachAutocomplete($('aStart'),{nearby:true,withMyLocation:true,getRecents:function(){return profile&&profile.recents||[]},
   onPick:function(it){afterPick('start',it);mode='end';hi()},onMyLocation:function(){$('bLocStart').click()},onEnter:function(){$('gStart').click()}});
-attachAutocomplete($('aEnd'),{getRecents:function(){return profile&&profile.recents||[]},onPick:function(it){afterPick('end',it)},onEnter:function(){$('gEnd').click()}});
+attachAutocomplete($('aEnd'),{nearby:true,getRecents:function(){return profile&&profile.recents||[]},onPick:function(it){afterPick('end',it)},onEnter:function(){$('gEnd').click()}});
 attachAutocomplete($('plQuery'),{getRecents:function(){return profile&&profile.recents||[]},
   onPick:function(it){
     var cl=PL.classify(it.tags),origin=mapCenter();searchOrigin=origin;
