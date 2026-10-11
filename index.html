@@ -99,6 +99,11 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
 #placeDetail{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;display:none}
 #placesBox>summary{cursor:pointer;font-size:17px;padding:2px 0}
 .err{color:var(--bad);font-size:14px;margin-top:6px}
+#mapSw{display:flex;background:var(--card,#fff);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.35);overflow:hidden;border:2px solid rgba(0,0,0,.15)}
+#mapSw button{border-radius:0;min-height:48px;min-width:84px;padding:8px 14px;background:var(--card,#fff);color:var(--fg)}
+#mapSw button[aria-pressed=true]{background:var(--pri);color:var(--pri-fg)}
+body.sat .leaflet-overlay-pane path{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px #fff)}
+body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
 /* desktop/tablet: left sidebar (>=900px). Phone layout above is untouched. */
 @media (min-width:900px){
 #map{left:380px;width:auto}
@@ -138,7 +143,6 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
 <section class="card">
   <div id="storeNotice" class="notice" style="display:none"><b>Heads up:</b> this browser is blocking local storage (private mode?). Your profile is kept only until you close or reload this page. Use Settings → Export to save a copy.</div>
   <div id="status" class="status"></div>
-  <details><summary>What's missing to qualify as an LSV?</summary><ul class="check" id="checklist"></ul></details>
   <p class="mut" id="prefLine"></p>
 </section>
 
@@ -180,6 +184,10 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
   <div id="placeDetail"></div>
   <p class="mut">🔒 Place searches (and suggestions while you type) send the text and the map center (or your location, if you choose “My location”) to Photon and Overpass. Nothing is saved. Opening hours are shown as listed in OpenStreetMap and may be wrong.</p>
 </details>
+
+<section class="card" id="lsvCard">
+  <details><summary>What's missing to qualify as an LSV?</summary><ul class="check" id="checklist"></ul></details>
+</section>
 
 <div class="disc"><b>Simplified rules – not legal advice.</b> Florida golf carts may only use roads your <i>local</i> government has designated and signed, and cities/counties can add restrictions or ban LSVs on certain roads. This prototype guesses from map data (speed limits, tags). <b>Always check local ordinances and posted signs.</b> Routes marked “assumed” are unverified.</div>
 <p class="mut">Map data © OpenStreetMap contributors (ODbL). Roads from the Overpass API; addresses from Nominatim. Statutes: Fla. Stat. 316.212, 316.2122, 320.01(22),(41). Prototype for testing only.</p>
@@ -902,12 +910,17 @@ var GEO = (function () {
     var s = styleOf(choice, prefersDark);
     return wrap(ESRI_CHAINS[s].concat([s === 'dark' ? 'cartoDark' : 'carto', 'osm']));
   }
+  // Map/Satellite quick switch: 'satellite' selects imagery; 'map' leaves satellite (keeps street/topo/dark/auto otherwise).
+  function basemapFor(want, current) {
+    if (want === 'satellite') return 'satellite';
+    return !current || current === 'satellite' || !ESRI_CHAINS[current] && current !== 'auto' ? 'auto' : current;
+  }
   // Counts tile errors; reports when to switch provider (threshold errors with no successful loads).
   function createTileGuard(threshold) {
     var errors = 0, loads = 0;
     return { error: function () { errors++; return loads === 0 && errors >= threshold; }, load: function () { loads++; }, reset: function () { errors = 0; loads = 0; }, counts: function () { return { errors: errors, loads: loads }; } };
   }
-  return { PROVIDERS: PROVIDERS, PROVIDER_CHOICES: PROVIDER_CHOICES, cycleList: cycleList, tileChain: tileChain, createTileGuard: createTileGuard, FL: FL, inFlorida: inFlorida, OPTIONS: OPTIONS, kindOf: kindOf, message: message, outsideMessage: outsideMessage, imprecise: imprecise, envProblem: envProblem };
+  return { PROVIDERS: PROVIDERS, PROVIDER_CHOICES: PROVIDER_CHOICES, cycleList: cycleList, basemapFor: basemapFor, tileChain: tileChain, createTileGuard: createTileGuard, FL: FL, inFlorida: inFlorida, OPTIONS: OPTIONS, kindOf: kindOf, message: message, outsideMessage: outsideMessage, imprecise: imprecise, envProblem: envProblem };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GEO;
 
@@ -1458,12 +1471,22 @@ function useTiles(i){
   var o={maxZoom:pv.maxZoom,attribution:pv.attribution};if(pv.subdomains)o.subdomains=pv.subdomains;if(pv.maxNativeZoom)o.maxNativeZoom=pv.maxNativeZoom;
   tileLayer=L.tileLayer(pv.url,o).addTo(map);
   if(pv.overlay)overlayLayer=L.tileLayer(pv.overlay,{maxZoom:pv.maxZoom,maxNativeZoom:pv.maxNativeZoom}).addTo(map);
+  syncMapSw();
   tileLayer.on('tileload',function(){tileGuard.load()});
   tileLayer.on('tileerror',function(){
     if(!tileGuard.error())return;
     if(tileIdx+1<tileChainList.length){var prev=pv.name,nx=tileChainList[tileIdx+1].name;useTiles(tileIdx+1);tileNotice('Map tiles from '+prev+' would not load, so the map switched to '+nx+'.')}
     else tileNotice('No map tiles could be loaded (offline or blocked). Routing still works from addresses or tapped points, but the map background is blank.');
   });
+}
+function syncMapSw(){
+  var sat=!!(tileChainList[tileIdx]&&tileChainList[tileIdx].key==='esriImagery');
+  document.body.classList.toggle('sat',sat);
+  var a=$('swMap'),b=$('swSat');if(a){a.setAttribute('aria-pressed',String(!sat));b.setAttribute('aria-pressed',String(sat))}
+}
+function setBasemapQuick(want){
+  if(!profile)return;
+  profile.prefs.basemap=GEO.basemapFor(want,profile.prefs.basemap);persist();applyBasemap(true);
 }
 function prefs(){return profile&&profile.prefs?profile.prefs:{basemap:'auto',tileProvider:'esri'}}
 function applyBasemap(announce){
@@ -1484,6 +1507,13 @@ function homeView(){var h=profile&&profile.home||PR.HOMES.palm;return[h.lat,h.lo
 if(mapOk){
   var hv=homeView();
   map=L.map('map').setView([hv[0],hv[1]],hv[2]);
+  var SwCtl=L.Control.extend({options:{position:'topright'},onAdd:function(){
+    var d=L.DomUtil.create('div','');d.id='mapSw';d.setAttribute('role','group');d.setAttribute('aria-label','Map type');
+    d.innerHTML='<button type="button" id="swMap" aria-pressed="true">Map</button><button type="button" id="swSat" aria-pressed="false">Satellite</button>';
+    L.DomEvent.disableClickPropagation(d);
+    d.querySelector('#swMap').onclick=function(){setBasemapQuick('map')};d.querySelector('#swSat').onclick=function(){setBasemapQuick('satellite')};
+    return d}});
+  new SwCtl().addTo(map);
   applyBasemap(false);
   routeLayer=L.layerGroup().addTo(map);
   map.on('click',function(e){setPoint(mode,[e.latlng.lat,e.latlng.lng]);mode=mode==='start'?'end':'start';hi()});
