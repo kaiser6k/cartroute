@@ -510,7 +510,7 @@ var GC = (function () {
     var mps = cartMph * 0.44704, tv = 0, hasT = res.edges.length > 0 && res.edges.every(function (e) { return e.mps; });
     if (hasT) res.edges.forEach(function (e) { tv += e.len / e.mps; });
     var time = (hasT ? tv : dist / mps) + crossings.length * 20;
-    return { nodeIds: res.path, coords: coords, segments: segs, crossings: crossings, distance_m: dist, time_s: time };
+    return { nodeIds: res.path, edgeWays: res.edges.map(function (e) { return e.w; }), coords: coords, segments: segs, crossings: crossings, distance_m: dist, time_s: time };
   }
 
   // Main entry. start/end: [lat,lon]. status = cartStatus(...) result.
