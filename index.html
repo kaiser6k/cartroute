@@ -26,6 +26,8 @@ button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:14px 16p
 button.pri{background:var(--pri);color:var(--pri-fg);width:100%;font-size:18px;margin-top:10px}
 button.sel{outline:3px solid var(--blue)}
 button.chip{padding:8px 12px;min-height:40px;font-size:14px}
+.mp3{flex-wrap:nowrap}.mp3 .chip{flex:1;min-height:48px;font-size:15px;padding:8px 6px;white-space:nowrap}
+#mpLine button{background:none;border:0;color:#1f6fd1;text-decoration:underline;padding:2px 6px;font-size:inherit;cursor:pointer;min-height:0;width:auto}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
 html,body{height:100%;overflow:hidden}
 #map{position:fixed;inset:0;height:100%;width:100%;z-index:0;margin:0}
@@ -149,22 +151,24 @@ body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
 
 <section class="card">
   <h2>Map & position</h2>
-  <div class="chips">
-    <button class="chip" id="flyHome">🏠 Home area</button>
-    <button class="chip" data-fly="palm">Palm Bay</button>
-    <button class="chip" data-fly="cocoa">Cocoa Beach</button>
+  <div class="chips mp3">
+    <button class="chip" id="bHome" type="button">🏠 Set home</button>
+    <button class="chip" id="bWork" type="button">💼 Set work</button>
     <button class="chip" id="bFollow" type="button">▶ Follow me</button>
   </div>
+  <div id="mpLine" class="mut" style="display:none;margin:4px 0"></div>
   <label class="chk"><input type="checkbox" id="followReroute"> Reroute from my position as I move (needs a destination)</label>
   <div id="geoMsg" class="status bad" style="display:none"></div>
-  <p class="mut">🔒 Your location stays in this browser. It is only saved if you choose “Use my current location as home area”.</p>
-  <p class="mut">🔒 Address suggestions send what you type and the map center to Photon (komoot.io). Only your last 5 picks are saved, on this device.</p>
+  <p class="mut">🔒 Your location stays in this browser. Address suggestions send what you type and the map center to Photon (komoot.io).</p>
+  <details id="mapOpts"><summary><b>Map options</b></summary>
   <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
   <div id="tileMsg" class="notice" style="display:none"></div>
   <label class="chk"><input type="checkbox" id="showLegal"> Show road legality on map <span class="mut" id="legalNote"></span></label>
   <div class="mut" id="legalHint" style="display:none;font-size:12px">Likely legal based on map data; local rules may differ.</div>
   <label class="chk"><input type="checkbox" id="showRestricted"> Show restricted roads overlay <span class="mut" id="restrNote"></span></label>
   <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span><span class="mut">Likely legal based on map data; local rules may differ</span><span><i style="border-color:#b00020;border-top-style:dashed"></i>restricted (overlay, if loaded)</span></div>
+  </details>
+  <button id="flyHome" style="display:none" type="button" aria-hidden="true" tabindex="-1"></button>
 </section>
 
 <details class="card" id="placesBox">
@@ -677,7 +681,7 @@ var PR = (function () {
   function defaultPrefs() { return { night: 'day', designatedLimit: 25, strict: false, allowCrossing: true, basemap: 'auto', tileProvider: 'esri' }; }
   function defaultProfile() {
     var c = defaultCart();
-    return { version: VERSION, name: '', carts: [c], activeCartId: c.id, prefs: defaultPrefs(), home: null, recents: [], setupDone: false, createdAt: new Date().toISOString() };
+    return { version: VERSION, name: '', carts: [c], activeCartId: c.id, prefs: defaultPrefs(), home: null, work: null, recents: [], setupDone: false, createdAt: new Date().toISOString() };
   }
 
   function str(v, max) { return (typeof v === 'string' ? v : '').trim().slice(0, max || 80); }
@@ -695,6 +699,12 @@ var PR = (function () {
     var lat = Number(h.lat), lon = Number(h.lon);
     if (!isFinite(lat) || !isFinite(lon) || lat < 24 || lat > 31.5 || lon < -88 || lon > -79.5) return null;
     return { key: h.key === 'palm' || h.key === 'cocoa' ? h.key : 'custom', label: str(h.label, 120) || 'Home', lat: lat, lon: lon };
+  }
+  function normWork(h) {
+    if (!h || typeof h !== 'object') return null;
+    var lat = Number(h.lat), lon = Number(h.lon);
+    if (!isFinite(lat) || !isFinite(lon) || lat < 24 || lat > 31.5 || lon < -88 || lon > -79.5) return null;
+    return { key: 'custom', label: str(h.label, 120) || 'Work', lat: lat, lon: lon };
   }
   function normRecents(list) {
     var out = [];
@@ -723,7 +733,7 @@ var PR = (function () {
         strict: pr.strict === true, allowCrossing: pr.allowCrossing !== false,
         basemap: ['auto', 'street', 'satellite', 'topo', 'dark'].indexOf(pr.basemap) >= 0 ? pr.basemap : 'auto',
         tileProvider: ['esri', 'carto', 'osm'].indexOf(pr.tileProvider) >= 0 ? pr.tileProvider : 'esri' },
-      home: normHome(p.home), recents: normRecents(p.recents), setupDone: p.setupDone === true,
+      home: normHome(p.home), work: normWork(p.work), recents: normRecents(p.recents), setupDone: p.setupDone === true,
       createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString()
     };
   }
@@ -742,6 +752,7 @@ var PR = (function () {
     else p.carts.forEach(function (c, i) { validateCart(c).forEach(function (m) { e.push('Cart ' + (i + 1) + ': ' + m); }); });
     if (p.prefs && [25, 30, 35].indexOf(Number(p.prefs.designatedLimit)) < 0) e.push('Speed cutoff must be 25, 30 or 35.');
     if (p.home != null && !normHome(p.home)) e.push('Home location is outside Florida or invalid.');
+    if (p.work != null && !normWork(p.work)) e.push('Work location is outside Florida or invalid.');
     return { ok: e.length === 0, errors: e };
   }
   // Migration: returns {ok, profile} or {ok:false, error}.
@@ -755,7 +766,7 @@ var PR = (function () {
       var cart = raw.cart || raw.carts && raw.carts[0] || raw;
       p = { name: raw.name || raw.userName, carts: raw.carts || [cart], activeCartId: raw.activeCartId,
         prefs: raw.prefs || { night: raw.night, designatedLimit: raw.designatedLimit, strict: raw.strict, allowCrossing: raw.allowCrossing },
-        home: raw.home, setupDone: raw.setupDone !== false, createdAt: raw.createdAt };
+        home: raw.home, work: raw.work, setupDone: raw.setupDone !== false, createdAt: raw.createdAt };
       if (!Array.isArray(raw.carts) && p.carts[0] && p.carts[0].name && !p.carts[0].nickname) p.carts[0] = Object.assign({}, p.carts[0], { nickname: p.carts[0].name });
     }
     return { ok: true, profile: normalize(p), migrated: v < VERSION };
@@ -1515,7 +1526,38 @@ if(mapOk){
   routeLayer=L.layerGroup().addTo(map);
   map.on('click',function(e){setPoint(mode,[e.latlng.lat,e.latlng.lng]);mode=mode==='start'?'end':'start';hi()});
 }else{$('map').innerHTML='<p style="padding:12px">The map library could not load (offline?). Connect to the internet and reload.</p>'}
-document.querySelectorAll('[data-fly]').forEach(function(b){b.addEventListener('click',function(){var c=PR.HOMES[b.dataset.fly];if(map)map.setView([c.lat,c.lon],13)})});
+(function(){
+  var line=$('mpLine');
+  function say(h){line.style.display=h?'block':'none';line.innerHTML=h||''}
+  function here(){
+    if(pts.start&&$('aStart').value.trim())return{lat:pts.start[0],lon:pts.start[1],label:$('aStart').value.trim().slice(0,120)};
+    if(pts.start)return{lat:pts.start[0],lon:pts.start[1],label:''};
+    var c=null;try{c=map&&map.getCenter&&map.getCenter()}catch(e){}
+    return c?{lat:c.lat,lon:c.lng,label:''}:null;
+  }
+  function paint(){
+    ['home','work'].forEach(function(k){var b=$(k==='home'?'bHome':'bWork'),v=profile&&profile[k],ic=k==='home'?'🏠 ':'💼 ',nm=k==='home'?'Home':'Work';
+      b.textContent=ic+(v?nm:'Set '+k.toLowerCase());b.classList.toggle('sel',!!v)});
+  }
+  function save(k){
+    var h=here();if(!h||!profile){say('Tap the map or enter a start first, then try again.');return}
+    var obj=PR.normalize(Object.assign({},profile,(function(){var o={};o[k]={key:'custom',label:h.label||(k==='home'?'Home':'Work'),lat:h.lat,lon:h.lon};return o})()))[k];
+    if(!obj){say('That spot is outside Florida, so it can\'t be saved.');return}
+    profile[k]=obj;persist();paint();
+    say((k==='home'?'Home':'Work')+' saved: <b>'+esc(obj.label)+'</b>.');
+  }
+  function tap(k){
+    var v=profile&&profile[k],nm=k==='home'?'Home':'Work';
+    if(!v){save(k);return}
+    if(map)map.setView([v.lat,v.lon],15);
+    say(nm+': <b>'+esc(v.label)+'</b> <button type="button" data-a="start">Start here</button><button type="button" data-a="end">Go here</button><button type="button" data-a="change">Change</button>');
+    line.querySelector('[data-a=start]').onclick=function(){setPoint('start',[v.lat,v.lon],v.label);say('Start set to '+esc(nm.toLowerCase())+'.')};
+    line.querySelector('[data-a=end]').onclick=function(){setPoint('end',[v.lat,v.lon],v.label);say('Destination set to '+esc(nm.toLowerCase())+'.')};
+    line.querySelector('[data-a=change]').onclick=function(){save(k)};
+  }
+  $('bHome').onclick=function(){tap('home')};$('bWork').onclick=function(){tap('work')};
+  window.paintHomeWork=paint;paint();
+})();
 $('switchMap').onclick=cycleMap;
 $('flyHome').onclick=function(){var v=homeView();if(map)map.setView([v[0],v[1]],v[2])};
 function hi(){var a=$('aStart'),b=$('aEnd');if(a)a.classList.toggle('tapmode',mode==='start');if(b)b.classList.toggle('tapmode',mode==='end')}
@@ -1538,7 +1580,7 @@ wireGeo($('gStart'),$('aStart'),'start');wireGeo($('gEnd'),$('aEnd'),'end');
 function busy(t){var b=$('busy');b.style.display=t?'block':'none';b.textContent=t}
 
 function afterProfileChange(recenter){
-  renderMain();
+  renderMain();if(window.paintHomeWork)window.paintHomeWork();
   if(recenter&&map){var v=homeView();map.setView([v[0],v[1]],v[2])}
 }
 
