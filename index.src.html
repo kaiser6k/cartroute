@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>CartRoute – golf cart & LSV route planner (prototype)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--fg:#14202b;--mut:#5a6b7a;--line:#d5dde4;--pri:#0b7a4b;--pri-fg:#fff;--warn:#b45309;--warnbg:#fff4e0;--bad:#b91c1c;--badbg:#fdecec;--good:#0b7a4b;--goodbg:#e6f6ee;--blue:#1f6fd1}
+@media (prefers-color-scheme:dark){:root{--bg:#10171d;--card:#1a232b;--fg:#e8eef3;--mut:#9fb0be;--line:#2f3d48;--pri:#2fb37a;--pri-fg:#06251a;--warn:#f0b35a;--warnbg:#33270f;--bad:#ff8585;--badbg:#3a1717;--good:#4fd69c;--goodbg:#10301f;--blue:#6aa8ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-text-size-adjust:100%}
+header{padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top))}
+header h1{margin:0;font-size:20px}header p{margin:2px 0 0;color:var(--mut);font-size:14px}
+main{max-width:760px;margin:0 auto;padding:0 12px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{margin:0 0 10px;font-size:17px}
+.disc{background:var(--warnbg);border:1px solid var(--warn);color:var(--fg);border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0}
+label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
+input[type=text],input[type=number],select{width:100%;font-size:17px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.chk{display:flex;align-items:center;gap:10px;padding:10px 4px;font-size:16px;color:var(--fg);margin:0;border-bottom:1px solid var(--line)}
+.chk input{width:24px;height:24px;flex:none}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:14px 16px;min-height:48px;background:var(--line);color:var(--fg);cursor:pointer}
+button.pri{background:var(--pri);color:var(--pri-fg);width:100%;font-size:18px;margin-top:10px}
+button.sel{outline:3px solid var(--blue)}
+button.chip{padding:8px 12px;min-height:40px;font-size:14px}
+.mp3{flex-wrap:nowrap}.mp3 .chip{flex:1;min-height:48px;font-size:15px;padding:8px 6px;white-space:nowrap}
+#mpLine button{background:none;border:0;color:#1f6fd1;text-decoration:underline;padding:2px 6px;font-size:inherit;cursor:pointer;min-height:0;width:auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+html,body{height:100%;overflow:hidden}
+#map{position:fixed;inset:0;height:100%;width:100%;z-index:0;margin:0}
+.leaflet-top{margin-top:calc(var(--topH,178px) + 6px)}
+.leaflet-bottom{margin-bottom:var(--sheetH,170px)}
+.leaflet-control-zoom a{width:40px!important;height:40px!important;line-height:40px!important}
+#topcard{position:fixed;left:8px;right:8px;top:max(8px,env(safe-area-inset-top));z-index:1200;max-width:620px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 8px 8px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+#topcard .brand{display:flex;align-items:center;gap:6px;min-height:44px}
+#topcard .brand b{flex:1;font-size:17px;white-space:nowrap}
+#topcard .chipbtn{max-width:56%;min-height:40px;padding:6px 10px}
+#topcard .gear{min-width:44px;min-height:44px;padding:4px;background:transparent}
+.route-in{display:flex;gap:8px;align-items:stretch}
+.route-in .rail{flex:none;width:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 0}
+.route-in .rail .dot{width:12px;height:12px;border-radius:50%;border:3px solid var(--blue);background:var(--card)}
+.route-in .rail .ln{flex:1;border-left:3px dotted var(--mut);margin:3px 0;min-height:14px}
+.route-in .rail .pin{font-size:18px;line-height:1;color:var(--bad)}
+.route-in .fields{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.route-in .addr input{min-height:48px;padding:10px 12px;font-size:16px}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-width:700px;margin:0 auto;background:var(--bg);border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.28);height:var(--sh,170px);max-height:92vh;display:flex;flex-direction:column;transition:height .2s;padding-bottom:env(safe-area-inset-bottom)}
+#sheet.drag{transition:none}
+#sheet .grab{flex:none;height:30px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;border:0;background:transparent;width:100%;min-height:30px;padding:0}
+#sheet .grab i{width:44px;height:5px;border-radius:3px;background:var(--mut);opacity:.6}
+#sheet .peek{flex:none;padding:0 12px 8px}
+#sheet .peek button.pri{margin-top:0}
+#peekSum{font-size:14px;color:var(--mut);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sheet .sbody{flex:1;overflow:auto;padding:0 12px 24px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#sheet .card{margin:10px 0}
+.modes{display:flex;gap:8px}.modes button{flex:1}
+.status{border-radius:12px;padding:12px;margin-top:10px;font-size:15px}
+.status.ok{background:var(--goodbg);border:1px solid var(--good)}.stwarn{margin-top:8px;font-size:13px;color:#7a4b00}.stwarn a{color:inherit;font-weight:600}
+.status.bad{background:var(--badbg);border:1px solid var(--bad)}
+.status b.t{display:block;font-size:17px;margin-bottom:4px}
+.status ul{margin:6px 0 0;padding-left:20px}
+.warn{color:var(--warn)}.mut{color:var(--mut);font-size:13px}
+.check li{list-style:none;margin-left:-18px}.check li.no::before{content:"✗ ";color:var(--bad);font-weight:700}.check li.yes::before{content:"✓ ";color:var(--good);font-weight:700}
+#busy{display:none;margin-top:10px;color:var(--mut)}
+.big{font-size:22px;font-weight:700}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-top:8px}
+.leg i{display:inline-block;width:22px;height:0;border-top:4px solid;vertical-align:middle;margin-right:4px}
+details summary{cursor:pointer;font-weight:600;padding:6px 0}
+ol.steps{padding-left:20px;margin:6px 0}
+
+.full{position:fixed;inset:0;background:var(--bg);overflow:auto;z-index:2000;display:none;padding:0 0 30px}
+.full.on{display:block}
+.full .in{max-width:560px;margin:0 auto;padding:16px 14px;padding-top:max(16px,env(safe-area-inset-top))}
+.prog{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 4px}.prog i{display:block;height:100%;background:var(--pri);transition:width .2s}
+.nav{display:flex;gap:10px;margin-top:18px}.nav button{flex:1;font-size:18px}
+.nav .pri{margin-top:0;width:auto;flex:2}
+h2.wz{font-size:24px;margin:14px 0 6px}
+.top{display:flex;align-items:center;gap:8px;padding:0 12px;max-width:760px;margin:0 auto}
+.top h1{flex:1;margin:0;font-size:20px;padding:12px 0}
+.chipbtn{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 12px;min-height:44px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.gear{min-width:48px;font-size:22px;padding:8px}
+.notice{background:var(--warnbg);border:1px solid var(--warn);border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0}
+.cartrow{border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0}.cartrow.act{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri) inset}
+.cartrow .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.cartrow .btns button{padding:8px 12px;min-height:40px;font-size:14px}
+button.danger{background:var(--badbg);color:var(--bad)}
+textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px}
+.acl{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1500;background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:min(50vh,330px);overflow:auto;margin:0;padding:4px;list-style:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:100%}
+.acl[hidden]{display:none}
+.acl li{min-height:48px;display:flex;gap:10px;align-items:center;padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--fg)}
+.acl li[aria-selected=true],.acl li:hover{background:var(--line)}
+.acl li.msg{cursor:default;color:var(--mut);font-size:14px}.acl li.msg:hover{background:none}
+.acl .ic{flex:none;width:26px;text-align:center;font-size:18px}.acl .tx{min-width:0;flex:1}
+.acl .p{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.acl .s{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addr{position:relative;display:flex;gap:6px;align-items:stretch}.addr input{flex:1 1 0;min-width:0;width:auto}.addr button{flex:none;min-width:48px;min-height:48px;padding:8px 12px}.addr button.ico{padding:0;width:48px;display:inline-flex;align-items:center;justify-content:center}
+.plist{list-style:none;padding:0;margin:8px 0}.plist li{margin:6px 0}
+.plist button.pl{width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);font-weight:500;padding:10px 12px;min-height:48px}
+.plist button.pl.on{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri) inset}
+.pl .nm{font-weight:700}.pl .sub{display:block;color:var(--mut);font-size:13px}.pl .bdg{display:block;font-size:13px;margin-top:2px}
+.bdg.reachable{color:var(--good)}.bdg.assumed,.bdg.walk,.bdg.far{color:var(--warn)}.bdg.none{color:var(--bad)}
+#placeDetail{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;display:none}
+#placesBox>summary{cursor:pointer;font-size:17px;padding:2px 0}
+.err{color:var(--bad);font-size:14px;margin-top:6px}
+#mapSw{display:flex;background:var(--card,#fff);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.35);overflow:hidden;border:2px solid rgba(0,0,0,.15)}
+#mapSw button{border-radius:0;min-height:48px;min-width:84px;padding:8px 14px;background:var(--card,#fff);color:var(--fg)}
+#mapSw button[aria-pressed=true]{background:var(--pri);color:var(--pri-fg)}
+body.sat .leaflet-overlay-pane path{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px #fff)}
+body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
+/* desktop/tablet: left sidebar (>=900px). Phone layout above is untouched. */
+@media (min-width:900px){
+#map{left:380px;width:auto}
+.leaflet-top{margin-top:0}.leaflet-bottom{margin-bottom:0}
+#topcard{left:0;right:auto;top:0;width:380px;max-width:none;margin:0;border-radius:0;border-width:0 1px 0 0;border-bottom:1px solid var(--line);padding:12px 14px 12px;box-shadow:none;z-index:1300}
+#topcard .brand{min-height:48px;margin-bottom:6px}#topcard .brand b{font-size:20px}
+#sheet{left:0;right:auto;top:var(--topH,178px);bottom:0;width:380px;max-width:none;margin:0;height:auto;max-height:none;border-radius:0;border-right:1px solid var(--line);box-shadow:4px 0 18px rgba(0,0,0,.18);transition:none;padding-bottom:0;z-index:1200}
+#sheet .grab,#peekSum{display:none}
+#sheet .peek{padding:12px 14px 4px}
+#sheet .sbody{padding:0 14px 28px}
+}
+.tapmode{box-shadow:0 0 0 2px #0a7a3d33}
+</style>
+</head>
+<body>
+<!-- layout: map-forward (v3) -->
+<div id="map"></div>
+<div id="topcard">
+  <div class="brand"><b>🛺 CartRoute</b><button class="chipbtn" id="cartChip" title="Switch cart">…</button><button class="gear" id="gear" aria-label="Profile and settings">⚙️</button></div>
+  <div class="route-in">
+    <div class="rail" aria-hidden="true"><span class="dot"></span><span class="ln"></span><span class="pin">📍</span></div>
+    <div class="fields">
+      <div class="addr"><input type="text" id="aStart" placeholder="Choose start" aria-label="Start address"><button id="bLocStart" class="ico" type="button" aria-label="Use my location as start" title="Use my location as start"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button><button id="gStart" type="button">Find</button></div>
+      <div class="addr"><input type="text" id="aEnd" placeholder="Choose destination" aria-label="Destination address"><button id="gEnd" type="button">Find</button></div>
+    </div>
+  </div>
+</div>
+<div id="sheet" data-state="peek">
+  <button class="grab" id="grab" type="button" aria-label="Expand or collapse panel"><i></i></button>
+  <div class="peek">
+    <button class="pri" id="go">Find legal route</button>
+    <div id="busy"></div>
+    <div id="peekSum"></div>
+  </div>
+  <div class="sbody" id="sbody">
+<section class="card" id="resCard" style="display:none"><h2>Result</h2><div id="result"></div></section>
+
+<section class="card">
+  <div id="storeNotice" class="notice" style="display:none"><b>Heads up:</b> this browser is blocking local storage (private mode?). Your profile is kept only until you close or reload this page. Use Settings → Export to save a copy.</div>
+  <div id="status" class="status"></div>
+  <p class="mut" id="prefLine"></p>
+</section>
+
+<section class="card">
+  <h2>Map & position</h2>
+  <div class="chips mp3">
+    <button class="chip" id="bHome" type="button">🏠 Set home</button>
+    <button class="chip" id="bWork" type="button">💼 Set work</button>
+    <button class="chip" id="bFollow" type="button">▶ Follow me</button>
+  </div>
+  <div id="mpLine" class="mut" style="display:none;margin:4px 0"></div>
+  <label class="chk"><input type="checkbox" id="followReroute"> Reroute from my position as I move (needs a destination)</label>
+  <div id="geoMsg" class="status bad" style="display:none"></div>
+  <p class="mut">🔒 Your location stays in this browser. Address suggestions send what you type and the map center to Photon (komoot.io).</p>
+  <details id="mapOpts"><summary><b>Map options</b></summary>
+  <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
+  <div id="tileMsg" class="notice" style="display:none"></div>
+  <label class="chk"><input type="checkbox" id="showLegal"> Show road legality on map <span class="mut" id="legalNote"></span></label>
+  <div class="mut" id="legalHint" style="display:none;font-size:12px">Likely legal based on map data; local rules may differ.</div>
+  <label class="chk"><input type="checkbox" id="showRestricted"> Show restricted roads overlay <span class="mut" id="restrNote"></span></label>
+  <div class="leg"><span><i style="border-color:#1f6fd1"></i>posted / tagged</span><span><i style="border-color:#e08a00;border-top-style:dashed"></i>assumed legality</span><span><i style="border-color:#d12b2b;border-top-style:dotted"></i>NOT legal (alternative only)</span><span>⚠ crossing</span><span class="mut">Likely legal based on map data; local rules may differ</span><span><i style="border-color:#b00020;border-top-style:dashed"></i>restricted (overlay, if loaded)</span></div>
+  </details>
+  <button id="flyHome" style="display:none" type="button" aria-hidden="true" tabindex="-1"></button>
+</section>
+
+<details class="card" id="placesBox">
+  <summary><b>🔎 Find places</b> <span class="mut">(shops, food, parks… and can your cart get there?)</span></summary>
+  <div class="addr" style="margin-top:10px"><input type="text" id="plQuery" placeholder="Publix, pizza, Cocoa Beach Pier" autocomplete="off"><button id="plGo" type="button">Search</button></div>
+  <div class="chips" id="plChips"></div>
+  <div class="row" style="margin-top:6px">
+    <div><label for="plAround">Around</label><select id="plAround"><option value="map">Map center</option><option value="me">My location</option></select></div>
+    <div><label for="plRadius">Radius</label><select id="plRadius"><option value="1000">1 km</option><option value="3000" selected>3 km</option><option value="5000">5 km</option></select></div>
+  </div>
+  <div id="plMsg" class="status ok" style="display:none"></div>
+  <p class="mut" id="plFrom"></p>
+  <ul class="plist" id="plList"></ul>
+  <div id="placeDetail"></div>
+  <p class="mut">🔒 Place searches (and suggestions while you type) send the text and the map center (or your location, if you choose “My location”) to Photon and Overpass. Nothing is saved. Opening hours are shown as listed in OpenStreetMap and may be wrong.</p>
+</details>
+
+<section class="card" id="lsvCard">
+  <details><summary>What's missing to qualify as an LSV?</summary><ul class="check" id="checklist"></ul></details>
+</section>
+
+<div class="disc"><b>Simplified rules – not legal advice.</b> Motorcycle, moped, e-scooter and Europe rules are general vehicle-class assumptions, not verified law. Florida rules are verified; other states use unverified defaults, so check your state and local law. In most states a golf cart may only use roads your <i>local</i> government has designated and signed, and cities/counties can add restrictions or ban LSVs on certain roads. This prototype guesses from map data (speed limits, tags). <b>Always check local ordinances and posted signs.</b> Routes marked “assumed” are unverified.</div>
+<p class="mut">Map data © OpenStreetMap contributors (ODbL). Roads from the Overpass API; addresses from Nominatim. Florida statutes used: Fla. Stat. 316.212, 316.2122, 320.01(22),(41). Other states: unverified defaults. Prototype for testing only.</p>
+  </div>
+</div>
+
+<div class="full" id="wizard"><div class="in" id="wizIn"></div></div>
+<div class="full" id="settings"><div class="in" id="setIn"></div></div>
+
+<script>
+/*EUROPE*/
+/*VEH*/
+/*STATES*/
+</script>
+<script>
+/*LIB*/
+</script>
+<script>
+/*PROFILE*/
+</script>
+<script>
+/*GEO*/
+</script>
+<script>
+/*PLACES*/
+</script>
+<script>
+/*AC*/
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'\u0026amp;','<':'\u0026lt;','>':'\u0026gt;','"':'\u0026quot;'}[c]})}
+var ls=null;try{ls=window.localStorage}catch(e){ls=null}
+var Store=PR.createStore(ls);
+var profile=Store.load();           // null => first run => wizard
+var status=null;
+function persist(){var ok=Store.save(profile);$('storeNotice').style.display=ok?'none':'block';return ok}
+function cart(){return PR.activeCart(profile)}
+function cartMph(){var c=cart();if(VEH.isVehicle(c.type))return Math.min(+c.speed||15,VEH.maxMph(c.type));return Math.min(+c.speed||15,status&&status.cls==='golf'?20:25)}
+// State of the start point (or the map center before a start is set); null when not detected. Only Florida is verified.
+function curState(){try{var p=(typeof pts!=='undefined'&&pts&&pts.start)||mapCenter();return ST.detect(p[0],p[1])}catch(e){return null}}
+function curPoint(){try{return(typeof pts!=='undefined'&&pts&&pts.start)||mapCenter()}catch(e){return null}}
+// Europe country row (EU-27, UK, NO, CH) for the start point or map center; null elsewhere.
+function curCountry(){try{var p=curPoint();return p?EUR.detect(p[0],p[1]):null}catch(e){return null}}
+// Display unit: vehicles and anything in Europe follow region + the Settings override; US golf carts/LSVs stay in mph.
+function unitOf(c){c=c||cart();var co=curCountry();return(VEH.isVehicle(c.type)||co)?VEH.unitFor(profile&&profile.prefs.units,co):'mph'}
+function ulab(u){return u==='kmh'?'km/h':'mph'}
+function ru(){return status&&status.rules&&status.rules.cls==='veh'?status.rules.unit:'mph'}
+function computeStatus(){var co=curCountry();status=PR.statusFor(GC,profile,null,curState(),co?{country:co}:null);return status}
+// Compact Europe warning (rules are unverified research): one line, links to EU law and the country's authority or a web search.
+function euroWarn(sr){
+  if(!sr||!sr.country)return'';var t=EUR.get(sr.country.code);if(!t)return'';
+  return'<div class="stwarn">'+esc(EUR.flag(t))+' ⚠️ '+esc(EUR.warning(t))+' <a href="'+esc(EUR.lawLink(t))+'" target="_blank" rel="noopener">EU rules</a> · <a href="'+esc(EUR.authorityLink(t))+'" target="_blank" rel="noopener">'+esc(t.n)+' authority</a></div>';
+}
+// Compact warning for states whose rules aren't verified: one line, links out to the state's own resources (no rule text here).
+function stateWarn(sr){
+  if(!sr||!sr.state||sr.state.verified)return'';var t=ST.get(sr.state.abbr);if(!t)return'';
+  return'<div class="stwarn">⚠️ '+esc(t.n)+' rules aren\'t fully verified. Check local law and signs. <a href="'+esc(ST.lawLink(t))+'" target="_blank" rel="noopener">State law</a> · <a href="'+esc(ST.dmvLink(t))+'" target="_blank" rel="noopener">Your state DMV</a></div>';
+}
+function refreshStateStatus(){var s=curState(),a=s?s.a:'',b=status&&status.state?status.state.abbr:'',co=curCountry(),ca=co?co.c:'',cb=status&&status.country?status.country.code:'';if((a!==b||ca!==cb)&&profile&&typeof renderMain==='function')renderMain()}
+var EQ_LABELS=[['headlights','Headlights'],['brakeLights','Tail + brake lights'],['turnSignals','Turn signals'],['seatBelts','Seat belts'],['mirrors','Rearview mirror'],['windshield','Windshield'],['reflectors','Red front & rear reflectors']];
+var LSV_LABELS=[['parkingBrake','Parking brake'],['hasVin','Has a VIN'],['registered','Titled, registered & insured as an LSV']];
+
+// ---------- status rendering ----------
+function statusHTML(st){
+  var h='<b class="t">'+(st.ok?'✅ ':'⛔ ')+esc(st.label)+'</b>';
+  st.explain.forEach(function(t){h+='<div>'+esc(t)+'</div>'});
+  if(st.warnings.length)h+='<ul>'+st.warnings.map(function(w){return'<li class="warn">'+esc(w)+'</li>'}).join('')+'</ul>';
+  h+=stateWarn(st)+euroWarn(st);
+  if(st.country&&!st.ok&&!VEH.isVehicle(cart().type))h+='<button id="useL6e" style="margin-top:8px">Use a light quadricycle (L6e, 45 km/h)</button>';
+  return h;
+}
+function checklistHTML(st){return st.checklist.map(function(c){return'<li class="'+(c.met?'yes':'no')+'">'+esc(c.item)+(!c.met&&c.note?' <span class="mut">('+esc(c.note)+')</span>':'')+'</li>'}).join('')}
+function renderMain(){
+  computeStatus();var c=cart();
+  var vt=VEH.get(c.type);
+  $('cartChip').textContent=(vt?vt.emoji:'🛺')+' '+PR.cartLabel(c)+' · '+(!status.ok?'⛔ not eligible':status.cls==='lsv'?'LSV':status.cls==='golf'?'Golf cart':vt.label.replace(/ \(.*$/,''));
+  var el=$('status');el.className='status '+(status.ok?'ok':'bad');el.innerHTML=statusHTML(status);
+  if($('useL6e'))$('useL6e').onclick=function(){PR.updateCart(profile,c.id,{type:'l6e',speed:VEH.get('l6e').defMph});persist();renderMain()};
+  $('lsvCard').style.display=(c.type==='golf'||c.type==='lsv')&&!status.country?'':'none';
+  $('checklist').innerHTML=checklistHTML(status);
+  var p=profile.prefs;
+  $('prefLine').textContent=(profile.name?profile.name+' · ':'')+(p.night==='night'?'Day + night':'Daytime only')+' · '+(VEH.isVehicle(c.type)?(status.country?'Europe · ':'')+ulab(status.unit||'mph')+' units':p.strict?'strict mode':'assumed roads up to '+p.designatedLimit+' mph')+' · change in ⚙️ Settings';
+}
+
+// ---------- generic field binding (data-k) ----------
+function typeFrag(c){return'<label>Vehicle type</label><select data-k="type">'+VEH.ORDER.map(function(k){var v=VEH.get(k);return'<option value="'+k+'"'+(c.type===k?' selected':'')+'>'+esc(v.emoji+' '+v.label)+'</option>'}).join('')+'</select>'+(VEH.isVehicle(c.type)?'<p class="mut">'+esc(VEH.get(c.type).note)+'</p>':'')+
+ '<label>Make / model</label><input type="text" data-k="make" maxlength="80" placeholder="e.g. Club Car Onward" value="'+esc(c.make)+'">'+
+ '<label>Nickname</label><input type="text" data-k="nickname" maxlength="80" placeholder="e.g. Beach Buggy" value="'+esc(c.nickname)+'">'}
+function speedFrag(c){var u=unitOf(c),v=VEH.isVehicle(c.type);return'<label>Top speed ('+ulab(u)+')</label><input type="number" data-k="speed" inputmode="decimal" min="1" max="'+(u==='kmh'?160:99)+'" step="any" value="'+esc(VEH.speedToDisplay(c.speed,u))+'">'+(v?'<p class="mut">Your usual cruising speed. Up to '+(u==='kmh'?Math.round(VEH.mphToKmh(VEH.maxMph(c.type)))+' km/h':Math.round(VEH.maxMph(c.type))+' mph')+' for this vehicle type.</p>':'<p class="mut">Check the spec sheet or a GPS app. Golf carts are legally capped at 20 mph; LSVs are 21–25 mph.</p>')}
+function chk(c,l){return'<label class="chk"><input type="checkbox" data-k="'+l[0]+'"'+(c[l[0]]?' checked':'')+'> '+esc(l[1])+'</label>'}
+function equipFrag(c){if(VEH.isVehicle(c.type))return'<p class="mut">No equipment checklist is needed for this vehicle type. Follow local equipment and helmet rules.</p>';return EQ_LABELS.map(function(l){return chk(c,l)}).join('')+'<p class="mut" style="margin-top:12px"><b>Only needed to qualify as an LSV</b></p>'+LSV_LABELS.map(function(l){return chk(c,l)}).join('')}
+function bindFields(root,obj,after){
+  root.querySelectorAll('[data-k]').forEach(function(el){
+    var k=el.getAttribute('data-k');
+    function h(){var v=el.type==='checkbox'?el.checked:el.value;
+      if(k==='speed')v=VEH.speedFromDisplay(v,unitOf(obj));
+      var prev=obj[k];obj[k]=v;
+      if(k==='type'&&VEH.get(v)&&(VEH.isVehicle(v)||VEH.isVehicle(prev))){obj.speed=VEH.get(v).defMph;var sp=root.querySelector('[data-k="speed"]');if(sp)sp.value=VEH.speedToDisplay(obj.speed,unitOf(obj))}
+      if(after)after(k)}
+    el.addEventListener('input',h);el.addEventListener('change',h);
+  });
+}
+function prefsFrag(pr,withMap){return(withMap?'<label>Map style</label><select data-k="basemap">'+[['auto','Auto (follows light/dark mode)'],['street','Street'],['satellite','Satellite'],['topo','Topo'],['dark','Dark']].map(function(o){return'<option value="'+o[0]+'"'+(pr.basemap===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>Map provider</label><select data-k="tileProvider">'+[['esri','Esri (default, works everywhere)'],['carto','CARTO'],['osm','OpenStreetMap']].map(function(o){return'<option value="'+o[0]+'"'+(pr.tileProvider===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><p class="mut">CARTO and OpenStreetMap block or watermark tiles on pages opened from a file (file://), showing “API key required” or “Access blocked”. They work when the app is hosted on an https page. Esri works either way.</p>':'')+'<label>Units</label><select data-k="units">'+[['auto','Automatic (miles in the US and UK, km/h in the EU)'],['kmh','km/h and km'],['mph','mph and miles']].map(function(o){return'<option value="'+o[0]+'"'+((pr.units||'auto')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>When will you drive?</label><select data-k="night"><option value="day"'+(pr.night==='day'?' selected':'')+'>Daytime only</option><option value="night"'+(pr.night==='night'?' selected':'')+'>Also at night</option></select>'+
+ '<label>Golf cart: speed cutoff for roads assumed to be designated</label><select data-k="designatedLimit">'+[25,30,35].map(function(n){return'<option value="'+n+'"'+(pr.designatedLimit===n?' selected':'')+'>'+n+' mph'+(n===25?' (default)':'')+'</option>'}).join('')+'</select>'+
+ '<label class="chk"><input type="checkbox" data-k="strict"'+(pr.strict?' checked':'')+'> Strict mode: only roads tagged golf_cart=yes in OpenStreetMap (very few, expect "no route" often)</label>'+
+ '<label class="chk"><input type="checkbox" data-k="allowCrossing"'+(pr.allowCrossing?' checked':'')+'> Allow crossing faster roads at intersections</label>'+
+ '<p class="mut">The statute sets no speed number for golf carts; the cutoff is an assumption about what local governments designate.</p>'}
+function bindPrefs(root,pr){
+  root.querySelectorAll('[data-k]').forEach(function(el){var k=el.getAttribute('data-k');
+    function h(){pr[k]=el.type==='checkbox'?el.checked:(k==='designatedLimit'?+el.value:el.value)}
+    el.addEventListener('input',h);el.addEventListener('change',h)});
+}
+
+// ---------- Geolocation (only on explicit taps; nothing runs at page load) ----------
+function getPos(){
+  return new Promise(function(res,rej){
+    var prob=GEO.envProblem(navigator,window);if(prob){rej(prob);return}
+    try{navigator.geolocation.getCurrentPosition(res,rej,GEO.OPTIONS)}catch(e){rej('unsupported')}
+  });
+}
+function geoMsg(t,good){var m=$('geoMsg');if(!m)return;m.style.display=t?'block':'none';m.textContent=t||'';m.className='status '+(good?'ok':'bad')}
+var posMarker=null,posCircle=null,watchId=null,lastPos=null,lastReroute=0;
+function showPos(p,center){
+  var ll=[p.coords.latitude,p.coords.longitude];lastPos=ll;
+  if(!mapOk)return;
+  if(posMarker){posMarker.setLatLng(ll);posCircle.setLatLng(ll);posCircle.setRadius(p.coords.accuracy||30)}
+  else{posCircle=L.circle(ll,{radius:p.coords.accuracy||30,color:'#1f6fd1',weight:1,fillOpacity:.12}).addTo(map);
+    posMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1f6fd1',fillOpacity:1}).addTo(map).bindTooltip('You are here')}
+  if(center)map.setView(ll,Math.max(map.getZoom?map.getZoom():15,15));
+}
+function fallbackHome(){var v=homeView();if(map)map.setView([v[0],v[1]],v[2])}
+// Handle a fix: returns true if usable (in the US); otherwise explains and falls back to home area.
+function acceptFix(p){
+  var lat=p.coords.latitude,lon=p.coords.longitude;
+  if(!GEO.supported(lat,lon)){geoMsg(GEO.outsideMessage(lat,lon));fallbackHome();return false}
+  return true;
+}
+function failGeo(e){geoMsg(GEO.message(GEO.kindOf(e),location.protocol))}
+// Fill the start box with a readable label: instantly 'My location (lat, lon)', then a Photon reverse-geocoded address if it arrives
+// and the user hasn't edited the box meanwhile.
+function labelMyLocation(lat,lon){
+  var base='My location ('+lat.toFixed(3)+', '+lon.toFixed(3)+')';$('aStart').value=base;
+  try{fetch('https://photon.komoot.io/reverse?lang=en&lat='+lat+'&lon='+lon,{headers:{'Accept':'application/json'}})
+    .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+      var f=j&&j.features&&j.features[0],pr=f&&f.properties;if(!pr)return;
+      var street=pr.street?((pr.housenumber?pr.housenumber+' ':'')+pr.street):(pr.name||'');
+      var lbl=[street,pr.city].filter(Boolean).join(', ');
+      if(lbl&&$('aStart').value===base)$('aStart').value='My location: '+lbl;
+    }).catch(function(){})}catch(e){}
+}
+$('bLocStart').onclick=function(){
+  var b=$('bLocStart');b.disabled=true;geoMsg('Finding your location…',true);
+  getPos().then(function(p){
+    if(!acceptFix(p))return;
+    showPos(p,true);setPoint('start',[p.coords.latitude,p.coords.longitude]);labelMyLocation(p.coords.latitude,p.coords.longitude);mode='end';hi();
+    geoMsg((GEO.imprecise(p.coords.accuracy)||'Start set to your location. Now pick a destination.'),!GEO.imprecise(p.coords.accuracy));
+  }).catch(failGeo).then(function(){b.disabled=false});
+};
+function stopFollow(){if(watchId!==null){try{navigator.geolocation.clearWatch(watchId)}catch(e){}watchId=null}$('bFollow').textContent='▶ Follow me';$('bFollow').classList.remove('sel')}
+$('bFollow').onclick=function(){
+  if(watchId!==null){stopFollow();geoMsg('Stopped following. Location tracking is off.',true);return}
+  var prob=GEO.envProblem(navigator,window);if(prob){geoMsg(GEO.message(prob,location.protocol));return}
+  geoMsg('Finding your location…',true);var first=true,failed=false;
+  try{
+    var id=navigator.geolocation.watchPosition(function(p){
+      if(!acceptFix(p)){failed=true;stopFollow();return}
+      showPos(p,first);
+      if(first){geoMsg('Following you. Tap “Stop following” to turn tracking off.',true);first=false}
+      if($('followReroute').checked&&pts.end&&!$('go').disabled&&Date.now()-lastReroute>15000){
+        var moved=!pts.start||GC.hav(pts.start,[p.coords.latitude,p.coords.longitude])>40;
+        if(moved){lastReroute=Date.now();setPoint('start',[p.coords.latitude,p.coords.longitude]);$('aStart').value='My location (following)';$('go').click()}
+      }
+    },function(e){failed=true;stopFollow();failGeo(e)},GEO.OPTIONS);
+    if(failed){try{navigator.geolocation.clearWatch(id)}catch(x){}return}
+    watchId=id;$('bFollow').textContent='⏹ Stop following';$('bFollow').classList.add('sel');
+  }catch(e){watchId=null;geoMsg(GEO.message('unsupported',location.protocol))}
+};
+
+// ---------- geocode (Nominatim, 1 req/s) ----------
+var lastGeo=0;
+function nominatim(q){
+  var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q);
+  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()}).then(function(a){if(!a.length)return null;return{lat:+a[0].lat,lon:+a[0].lon}});
+}
+// Photon (CORS-friendly, no key, works from file://) first; Nominatim only as a fallback on real http(s) pages,
+// because it rejects requests that have no Referer (which file:// pages cannot send).
+function geoBias(){return pts&&pts.start?{lat:pts.start[0],lon:pts.start[1]}:(profile&&profile.home?{lat:profile.home.lat,lon:profile.home.lon}:null)}
+// Reference point for by-name searches: the start point if set, else the map center (which falls back to home).
+function refPoint(){if(pts&&pts.start)return[pts.start[0],pts.start[1]];return mapCenter()}
+// Nominatim policy: max 1 request/second. All Nominatim calls go through this gate; autocomplete skips it when the queue is long.
+var nomNext=0;
+function nomGate(maxWait){var now=Date.now(),w=Math.max(0,nomNext-now);if(maxWait!=null&&w>maxWait)return null;nomNext=now+w+1100;return new Promise(function(r){setTimeout(r,w)})}
+function nearIO(opt){
+  opt=opt||{};
+  return{
+    json:function(u){return fetch(u,{headers:{'Accept':'application/json'},signal:opt.signal}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()})},
+    nominatim:location.protocol==='file:'?null:function(u){var g=nomGate(opt.maxWait);if(!g)return null;return g.then(function(){return fetch(u,{headers:{'Accept':'application/json'},signal:opt.signal})}).then(function(r){if(!r)return null;if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()})},
+    overpass:function(q){return overpassFetch(q,'places',true)}
+  };
+}
+function findNearbyByName(q,opt){return AC.searchNearby(q,refPoint(),nearIO(opt),opt)}
+// Category words (coffee, gas station, pharmacy ...): Overpass category search around the reference point, nearest first.
+function findNearbyCategory(q,opt){var io=nearIO(opt);return AC.searchCategory(q,refPoint(),{overpass:io.overpass,json:io.json})}
+function photon(q){
+  var bi=geoBias()||(function(){var r=refPoint();return{lat:r[0],lon:r[1]}})(),h=bi?'&lat='+bi.lat+'&lon='+bi.lon:'';
+  var url='https://photon.komoot.io/api/?lang=en&limit=10'+h+'&q='+encodeURIComponent(q);
+  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){return GEO.pickPhoton(j.features,q,bi,GEO.isPlaceName(q)?60:0)});
+}
+function nominatimNear(q){
+  var bi=geoBias(),vb=bi?'&viewbox='+[bi.lon-0.5,bi.lat+0.5,bi.lon+0.5,bi.lat-0.5].join(','):'';
+  var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1'+vb+'&q='+encodeURIComponent(q);
+  return nomGate().then(function(){return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()}).then(function(a){return a.length?{lat:+a[0].lat,lon:+a[0].lon}:null})});
+}
+// Try each cleaned-up wording on Photon, then (on real http(s) pages) Nominatim, which finds exact street addresses Photon lacks.
+function geocode(q){
+  if(AC.isCategoryQuery(q)){
+    return findNearbyCategory(q,{}).then(function(res){
+      if(res.items.length){var it=res.items[0];return{lat:it.lat,lon:it.lon,label:it.label}}
+      throw new Error('No '+res.cat.label+' found within 10 km. Try a different word or tap the map.')
+    });
+  }
+  if(AC.isNameQuery(q)){
+    // A plain place name (no house number): find the nearest match to the start point / map center first; fall back to address lookup if nothing is nearby.
+    return findNearbyByName(q,{deep:true}).then(function(res){
+      if(res.items.length){var it=res.items[0];return{lat:it.lat,lon:it.lon,label:it.label}}
+      return geocodeAddr(q);
+    });
+  }
+  return geocodeAddr(q);
+}
+function geocodeAddr(q){
+  var wait=Math.max(0,lastGeo+1100-Date.now());lastGeo=Date.now()+wait;
+  var NF='Address not found. Try adding the city (and the country in Europe), or tap the map instead.';
+  var NET='Address search could not be reached right now. Tap the map to choose your points instead.';
+  var vs=GEO.orderedVariants(q),netErr=false;
+  function seq(list,fn){return list.reduce(function(p,v){return p.then(function(r){return r||fn(v).catch(function(){netErr=true;return null})})},Promise.resolve(null))}
+  return new Promise(function(r){setTimeout(r,wait)}).then(function(){return seq(vs,photon)}).then(function(r){
+    if(r||location.protocol==='file:')return r;
+    return seq(vs,nominatimNear)
+  }).then(function(r){if(!r)throw new Error(netErr?NET:NF);return r});
+}
+function homeFrag(h){var k=h?h.key:'';return'<div class="chips"><button class="chip homebtn" data-home="palm">Palm Bay</button><button class="chip homebtn" data-home="cocoa">Cocoa Beach</button></div>'+
+ '<label>Or enter an address</label><div class="row"><input type="text" id="homeAddr" placeholder="street, city" style="flex:3" value="'+esc(k==='custom'?h.label:'')+'"><button id="homeFind" style="flex:1">Find</button></div>'+
+ '<button id="homeGeo" style="width:100%;margin-top:8px">📡 Use my current location as home area</button><p class="mut">🔒 Your location stays in this browser and is saved only because you tap this button.</p>'+'<p class="mut">🔒 Suggestions send what you type and the map center to Photon (komoot.io).</p><div id="homeSel" class="mut" style="margin-top:8px">'+(h?'Selected: <b>'+esc(h.label)+'</b>':'No home area selected yet.')+'</div><div class="err" id="homeErr"></div>'}
+function bindHome(root,get,set){
+  function show(){var h=get();$('homeSel').innerHTML=h?'Selected: <b>'+esc(h.label)+'</b>':'No home area selected yet.';
+    root.querySelectorAll('.homebtn').forEach(function(b){b.classList.toggle('sel',!!h&&h.key===b.dataset.home)})}
+  root.querySelectorAll('.homebtn').forEach(function(b){b.onclick=function(){set(Object.assign({},PR.HOMES[b.dataset.home]));$('homeErr').textContent='';show()}});
+  $('homeFind').onclick=function(){var q=$('homeAddr').value.trim();if(!q)return;var b=$('homeFind');b.disabled=true;$('homeErr').textContent='Looking up…';
+    geocode(q).then(function(r){set({key:'custom',label:q,lat:+r.lat,lon:+r.lon});$('homeErr').textContent='';show()})
+     .catch(function(e){$('homeErr').textContent=e.message}).then(function(){b.disabled=false})};
+  $('homeGeo').onclick=function(){var b=$('homeGeo');b.disabled=true;$('homeErr').textContent='Finding your location…';
+    getPos().then(function(p){
+      var lat=p.coords.latitude,lon=p.coords.longitude;
+      if(!GEO.supported(lat,lon)){$('homeErr').textContent=GEO.outsideMessage(lat,lon);return}
+      set({key:'custom',label:'My location ('+lat.toFixed(3)+', '+lon.toFixed(3)+')',lat:lat,lon:lon});$('homeErr').textContent='';show();$('homeErr').style.color='#0a7a3d';$('homeErr').textContent='✓ Home area set to your location.';try{if(document.activeElement)document.activeElement.blur();$('homeSel').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
+    }).catch(function(e){$('homeErr').textContent=GEO.message(GEO.kindOf(e),location.protocol)}).then(function(){b.disabled=false})};
+  attachAutocomplete($('homeAddr'),{getRecents:function(){return profile&&profile.recents||[]},noRecent:true,
+    onPick:function(it){set({key:'custom',label:it.label,lat:it.lat,lon:it.lon});$('homeErr').textContent='';show()},onEnter:function(){$('homeFind').click()}});
+  show();
+}
+
+// ---------- Wizard ----------
+var wz=null; // {step, draft, rerun}
+var WZ_IDX=[0,1,2,3,4,6],STEPS=WZ_IDX.length;
+function openWizard(rerun){
+  var d=JSON.parse(JSON.stringify(rerun?profile:PR.defaultProfile()));
+  if(!rerun){d.home=null}
+  wz={step:0,draft:d,rerun:!!rerun};
+  $('wizard').classList.add('on');renderWizard();
+}
+function wcart(){return PR.activeCart(wz.draft)}
+function renderWizard(){
+  var s=wz.step,k=WZ_IDX[s],d=wz.draft,c=wcart(),h='';
+  h+='<div class="mut">Step '+(s+1)+' of '+STEPS+'</div><div class="prog"><i style="width:'+Math.round((s+1)/STEPS*100)+'%"></i></div>';
+  var titles=['Welcome to CartRoute','Your cart','How fast does it go?','Equipment','Driving preferences','Home area','Review'];
+  h+='<h2 class="wz">'+titles[k]+'</h2>';
+  if(k===0)h+='<p>Let\'s set up your account so routes only use roads your cart may legally use. It takes about a minute. Everything is stored on this device only.</p><label>What should we call you?</label><input type="text" id="wName" maxlength="60" placeholder="Your first name" value="'+esc(d.name)+'">';
+  if(k===1)h+='<p>What do you drive?</p>'+typeFrag(c);
+  if(k===2)h+=speedFrag(c);
+  if(k===3)h+=VEH.isVehicle(c.type)?equipFrag(c):'<p>Tick everything your cart has. Be honest; this decides which roads you can use.</p>'+equipFrag(c);
+  if(k===4)h+=prefsFrag(d.prefs);
+  if(k===5)h+='<p>Pick the area the map should open on.</p>'+homeFrag(d.home);
+  if(k===6){var st=PR.statusFor(GC,d);h+='<div class="status '+(st.ok?'ok':'bad')+'">'+statusHTML(st)+'</div>'+(VEH.isVehicle(c.type)?'':'<h3 style="margin-bottom:0">What\'s missing to be an LSV?</h3><ul class="check">'+checklistHTML(st)+'</ul>')+'<p class="mut">Name: '+esc(d.name||'(not set)')+' · Cart: '+esc(PR.cartLabel(c))+' · Home: '+esc(d.home?d.home.label:'(not set)')+'</p><div class="disc">Rules are simplified. Check local ordinances and signs.</div>'}
+  h+='<div class="err" id="wErr"></div><div class="nav">'+(s>0?'<button id="wBack">Back</button>':(wz.rerun?'<button id="wCancel">Cancel</button>':''))+'<button class="pri" id="wNext">'+(s===STEPS-1?'Finish':'Next')+'</button></div>';
+  var root=$('wizIn');root.innerHTML=h;root.scrollTop=0;$('wizard').scrollTop=0;
+  if(k===0)$('wName').addEventListener('input',function(){d.name=this.value});
+  if(k===1||k===2||k===3)bindFields(root,c);
+  if(k===4)bindPrefs(root,d.prefs);
+  if(k===5)bindHome(root,function(){return d.home},function(v){d.home=v});
+  if($('wBack'))$('wBack').onclick=function(){wz.step--;renderWizard()};
+  if($('wCancel'))$('wCancel').onclick=closeWizard;
+  $('wNext').onclick=function(){
+    var err='';
+    if(k===2){var sp=Number(c.speed),mx=VEH.maxMph(c.type);if(!(sp>0&&sp<=mx))err=VEH.isVehicle(c.type)?'Enter a top speed between 1 and '+Math.round(mx)+' mph ('+Math.round(VEH.mphToKmh(mx))+' km/h).':'Enter a top speed between 1 and 60 mph.'}
+    if(k===5&&!d.home)err='Pick Palm Bay, Cocoa Beach, or find an address.';
+    if(err){$('wErr').textContent=err;return}
+    if(s<STEPS-1){wz.step++;renderWizard();return}
+    var v=PR.validate(d);if(!v.ok){$('wErr').textContent=v.errors.join(' ');return}
+    d.setupDone=true;profile=PR.normalize(d);persist();closeWizard();applyBasemap();afterProfileChange(true);
+  };
+}
+function closeWizard(){$('wizard').classList.remove('on');wz=null}
+
+// ---------- Settings ----------
+var editing=null; // cart draft being edited {id|null,data}
+function openSettings(){renderSettings();$('settings').classList.add('on')}
+function closeSettings(){$('settings').classList.remove('on');editing=null;afterProfileChange(false)}
+function renderSettings(msg){
+  var h='<div class="row" style="align-items:center"><h2 class="wz" style="margin:0">⚙️ Profile & settings</h2><button id="sClose" style="flex:none">Done</button></div>';
+  if(!Store.persistent)h+='<div class="notice">Local storage is unavailable, so changes last only until this page is closed. Export a copy below.</div>';
+  if(msg)h+='<div class="status ok">'+esc(msg)+'</div>';
+  h+='<div class="card"><h2>You</h2><label>Name</label><input type="text" id="sName" maxlength="60" value="'+esc(profile.name)+'"></div>';
+  h+='<div class="card"><h2>Carts</h2>';
+  profile.carts.forEach(function(c){
+    var st=PR.statusFor(GC,profile,c.id);
+    h+='<div class="cartrow'+(c.id===profile.activeCartId?' act':'')+'"><b>'+esc(PR.cartLabel(c))+'</b>'+(c.id===profile.activeCartId?' <span class="mut">(active)</span>':'')+'<div class="mut">'+esc(c.make)+(c.make?' · ':'')+esc((VEH.get(c.type)||VEH.get('golf')).label.replace(/ \(.*$/,''))+' · '+esc(c.speed)+' mph</div><div class="mut">'+(st.ok?'✅ ':'⛔ ')+esc(st.label)+'</div><div class="btns">'+
+     (c.id!==profile.activeCartId?'<button data-act="use" data-id="'+c.id+'">Use this cart</button>':'')+'<button data-act="edit" data-id="'+c.id+'">Edit</button>'+(profile.carts.length>1?'<button class="danger" data-act="del" data-id="'+c.id+'">Delete</button>':'')+'</div></div>';
+  });
+  h+='<button id="addCart" style="width:100%;margin-top:6px">＋ Add a cart</button><div id="editor"></div></div>';
+  h+='<div class="card"><h2>Driving preferences</h2>'+prefsFrag(profile.prefs,true)+'</div>';
+  h+='<div class="card"><h2>Home area</h2>'+homeFrag(profile.home)+'</div>';
+  h+='<div class="card"><h2>Your data</h2><button id="rerun" style="width:100%">Re-run setup wizard</button><button id="export" style="width:100%;margin-top:8px">Export profile (JSON)</button>'+
+   '<textarea id="ioText" placeholder="Exported JSON shows here. To import, paste a profile here (or choose a file) and tap Import." style="margin-top:8px"></textarea>'+
+   '<div class="row" style="margin-top:8px"><button id="impBtn">Import pasted JSON</button><input type="file" id="impFile" accept="application/json,.json"></div><div class="err" id="ioErr"></div>'+
+   '<button class="danger" id="reset" style="width:100%;margin-top:14px">Reset all data…</button></div>';
+  var root=$('setIn');root.innerHTML=h;
+  $('sClose').onclick=closeSettings;
+  $('sName').addEventListener('input',function(){profile.name=this.value.trim();persist()});
+  // prefs
+  var prefCard=root.querySelectorAll('.card')[2];
+  prefCard.querySelectorAll('[data-k]').forEach(function(el){var k=el.getAttribute('data-k');
+    function hnd(){profile.prefs[k]=el.type==='checkbox'?el.checked:(k==='designatedLimit'?+el.value:el.value);persist();if(k==='basemap'||k==='tileProvider')applyBasemap(true)}
+    el.addEventListener('change',hnd)});
+  bindHome(root.querySelectorAll('.card')[3],function(){return profile.home},function(v){profile.home=v;persist()});
+  root.querySelectorAll('[data-act]').forEach(function(b){b.onclick=function(){
+    var id=b.dataset.id,a=b.dataset.act;
+    if(a==='use'){PR.setActive(profile,id);persist();renderSettings('Switched cart.')}
+    if(a==='edit'){startEdit(id)}
+    if(a==='del'){var cc=profile.carts.filter(function(x){return x.id===id})[0];if(confirm('Delete "'+PR.cartLabel(cc)+'"?')){PR.deleteCart(profile,id);persist();renderSettings('Cart deleted.')}}
+  }});
+  $('addCart').onclick=function(){startEdit(null)};
+  $('rerun').onclick=function(){$('settings').classList.remove('on');openWizard(true)};
+  $('export').onclick=doExport;
+  $('impBtn').onclick=function(){doImport($('ioText').value)};
+  $('impFile').onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){doImport(String(r.result))};r.readAsText(f)};
+  $('reset').onclick=function(){if(confirm('Reset ALL CartRoute data on this device? This deletes your profile and carts and cannot be undone.')){Store.clear();profile=null;closeSettingsQuiet();openWizard(false)}};
+  if(editing)drawEditor();
+}
+function closeSettingsQuiet(){$('settings').classList.remove('on');editing=null}
+function startEdit(id){
+  var base=id?profile.carts.filter(function(c){return c.id===id})[0]:PR.defaultCart();
+  editing={id:id,data:JSON.parse(JSON.stringify(base))};drawEditor();
+}
+function drawEditor(){
+  var d=editing.data,el=$('editor');
+  el.innerHTML='<div class="cartrow act"><b>'+(editing.id?'Edit vehicle':'New vehicle')+'</b>'+typeFrag(d)+speedFrag(d)+equipFrag(d)+'<div class="err" id="eErr"></div><div class="btns"><button class="pri" id="eSave" style="margin-top:0;width:auto">Save cart</button><button id="eCancel">Cancel</button></div></div>';
+  bindFields(el,d,function(k){if(k==='type')drawEditor()});
+  $('eCancel').onclick=function(){editing=null;el.innerHTML=''};
+  $('eSave').onclick=function(){
+    var e=PR.validateCart(d);if(e.length){$('eErr').textContent=e.join(' ');return}
+    if(editing.id)PR.updateCart(profile,editing.id,d);else{var c=PR.addCart(profile,d);PR.setActive(profile,c.id)}
+    persist();editing=null;renderSettings('Cart saved.');
+  };
+  el.scrollIntoView({block:'nearest'});
+}
+function doExport(){
+  var txt=PR.serialize(profile);$('ioText').value=txt;
+  try{var b=new Blob([txt],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cartroute-profile.json';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a)},500)}catch(e){}
+}
+function doImport(text){
+  var r=PR.parseImport(text);if(!r.ok){$('ioErr').textContent=r.error;return}
+  if(!confirm('Replace your current profile with the imported one?'))return;
+  profile=r.profile;persist();applyBasemap();renderSettings('Profile imported.');
+}
+$('gear').onclick=openSettings;$('cartChip').onclick=openSettings;
+
+// ---------- Map ----------
+var mapOk=typeof L!=='undefined',map,mStart,mEnd,routeLayer;
+var pts={start:null,end:null},mode='start';
+var tileLayer=null,overlayLayer=null,tileChainList=[],tileIdx=0,tileGuard=GEO.createTileGuard(5);
+function tileNotice(t){var n=$('tileMsg');if(!n)return;n.style.display=t?'block':'none';n.textContent=t||''}
+function prefersDark(){try{return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}catch(e){return false}}
+function useTiles(i){
+  if(tileLayer){map.removeLayer(tileLayer);tileLayer=null}
+  if(overlayLayer){map.removeLayer(overlayLayer);overlayLayer=null}
+  tileIdx=i;var pv=tileChainList[i];tileGuard.reset();
+  var o={maxZoom:pv.maxZoom,attribution:pv.attribution};if(pv.subdomains)o.subdomains=pv.subdomains;if(pv.maxNativeZoom)o.maxNativeZoom=pv.maxNativeZoom;
+  tileLayer=L.tileLayer(pv.url,o).addTo(map);
+  if(pv.overlay)overlayLayer=L.tileLayer(pv.overlay,{maxZoom:pv.maxZoom,maxNativeZoom:pv.maxNativeZoom}).addTo(map);
+  syncMapSw();
+  tileLayer.on('tileload',function(){tileGuard.load()});
+  tileLayer.on('tileerror',function(){
+    if(!tileGuard.error())return;
+    if(tileIdx+1<tileChainList.length){var prev=pv.name,nx=tileChainList[tileIdx+1].name;useTiles(tileIdx+1);tileNotice('Map tiles from '+prev+' would not load, so the map switched to '+nx+'.')}
+    else tileNotice('No map tiles could be loaded (offline or blocked). Routing still works from addresses or tapped points, but the map background is blank.');
+  });
+}
+function syncMapSw(){
+  var sat=!!(tileChainList[tileIdx]&&tileChainList[tileIdx].key==='esriImagery');
+  document.body.classList.toggle('sat',sat);
+  var a=$('swMap'),b=$('swSat');if(a){a.setAttribute('aria-pressed',String(!sat));b.setAttribute('aria-pressed',String(sat))}
+}
+function setBasemapQuick(want){
+  if(!profile)return;
+  profile.prefs.basemap=GEO.basemapFor(want,profile.prefs.basemap);persist();applyBasemap(true);
+}
+function prefs(){return profile&&profile.prefs?profile.prefs:{basemap:'auto',tileProvider:'esri'}}
+function applyBasemap(announce){
+  if(!mapOk)return;
+  tileChainList=GEO.tileChain(prefs().basemap,prefersDark(),prefs().tileProvider);
+  tileNotice('');useTiles(0);
+}
+// Manual switch: blocked tiles can come back as HTTP 200 warning images, which no error event can detect.
+function cycleMap(){
+  if(!mapOk)return;
+  var list=GEO.cycleList(prefs().basemap,prefersDark()),cur=tileChainList[tileIdx]?tileChainList[tileIdx].key:'';
+  var idx=0;for(var i=0;i<list.length;i++)if(list[i].key===cur){idx=(i+1)%list.length;break}
+  tileChainList=list;useTiles(idx);
+  var n=list[idx],manual=(n.key==='carto'||n.key==='cartoDark'||n.key==='osm');
+  tileNotice('Now showing: '+n.name+'.'+(manual?' This provider may show “API key required” or “Access blocked” tiles when the app is opened from a file; tap again to move on.':'')+' (Pick a permanent choice in Settings → Map provider.)');
+}
+function homeView(){var h=profile&&profile.home||PR.HOMES.palm;return[h.lat,h.lon,13]}
+if(mapOk){
+  var hv=homeView();
+  map=L.map('map').setView([hv[0],hv[1]],hv[2]);
+  var SwCtl=L.Control.extend({options:{position:'topright'},onAdd:function(){
+    var d=L.DomUtil.create('div','');d.id='mapSw';d.setAttribute('role','group');d.setAttribute('aria-label','Map type');
+    d.innerHTML='<button type="button" id="swMap" aria-pressed="true">Map</button><button type="button" id="swSat" aria-pressed="false">Satellite</button>';
+    L.DomEvent.disableClickPropagation(d);
+    d.querySelector('#swMap').onclick=function(){setBasemapQuick('map')};d.querySelector('#swSat').onclick=function(){setBasemapQuick('satellite')};
+    return d}});
+  new SwCtl().addTo(map);
+  applyBasemap(false);
+  routeLayer=L.layerGroup().addTo(map);
+  map.on('click',function(e){setPoint(mode,[e.latlng.lat,e.latlng.lng]);mode=mode==='start'?'end':'start';hi()});
+}else{$('map').innerHTML='<p style="padding:12px">The map library could not load (offline?). Connect to the internet and reload.</p>'}
+(function(){
+  var line=$('mpLine');
+  function say(h){line.style.display=h?'block':'none';line.innerHTML=h||''}
+  function here(){
+    if(pts.start&&$('aStart').value.trim())return{lat:pts.start[0],lon:pts.start[1],label:$('aStart').value.trim().slice(0,120)};
+    if(pts.start)return{lat:pts.start[0],lon:pts.start[1],label:''};
+    var c=null;try{c=map&&map.getCenter&&map.getCenter()}catch(e){}
+    return c?{lat:c.lat,lon:c.lng,label:''}:null;
+  }
+  function paint(){
+    ['home','work'].forEach(function(k){var b=$(k==='home'?'bHome':'bWork'),v=profile&&profile[k],ic=k==='home'?'🏠 ':'💼 ',nm=k==='home'?'Home':'Work';
+      b.textContent=ic+(v?nm:'Set '+k.toLowerCase());b.classList.toggle('sel',!!v)});
+  }
+  function save(k){
+    var h=here();if(!h||!profile){say('Tap the map or enter a start first, then try again.');return}
+    var obj=PR.normalize(Object.assign({},profile,(function(){var o={};o[k]={key:'custom',label:h.label||(k==='home'?'Home':'Work'),lat:h.lat,lon:h.lon};return o})()))[k];
+    if(!obj){say('That spot is outside the US, so it can\'t be saved.');return}
+    profile[k]=obj;persist();paint();
+    say((k==='home'?'Home':'Work')+' saved: <b>'+esc(obj.label)+'</b>.');
+  }
+  function tap(k){
+    var v=profile&&profile[k],nm=k==='home'?'Home':'Work';
+    if(!v){save(k);return}
+    if(map)map.setView([v.lat,v.lon],15);
+    say(nm+': <b>'+esc(v.label)+'</b> <button type="button" data-a="start">Start here</button><button type="button" data-a="end">Go here</button><button type="button" data-a="change">Change</button>');
+    line.querySelector('[data-a=start]').onclick=function(){setPoint('start',[v.lat,v.lon],v.label);say('Start set to '+esc(nm.toLowerCase())+'.')};
+    line.querySelector('[data-a=end]').onclick=function(){setPoint('end',[v.lat,v.lon],v.label);say('Destination set to '+esc(nm.toLowerCase())+'.')};
+    line.querySelector('[data-a=change]').onclick=function(){save(k)};
+  }
+  $('bHome').onclick=function(){tap('home')};$('bWork').onclick=function(){tap('work')};
+  window.paintHomeWork=paint;paint();
+})();
+$('switchMap').onclick=cycleMap;
+$('flyHome').onclick=function(){var v=homeView();if(map)map.setView([v[0],v[1]],v[2])};
+function hi(){var a=$('aStart'),b=$('aEnd');if(a)a.classList.toggle('tapmode',mode==='start');if(b)b.classList.toggle('tapmode',mode==='end')}
+$('aStart').addEventListener('focus',function(){mode='start';hi()});$('aEnd').addEventListener('focus',function(){mode='end';hi()});hi();
+function saveTrip(){try{localStorage.setItem('cartroute.trip',JSON.stringify({s:pts.start,e:pts.end,sa:$('aStart').value,ea:$('aEnd').value}))}catch(x){}}
+function setPoint(which,ll,label){
+  pts[which]=ll;saveTrip();refreshStateStatus();if(!mapOk)return;
+  var m=which==='start'?mStart:mEnd;if(m)map.removeLayer(m);
+  m=L.marker(ll,{draggable:true,title:which}).addTo(map).bindTooltip(which==='start'?'Start':'End',{permanent:true,direction:'top',offset:[-15,-10]});
+  m.on('dragend',function(){var p=m.getLatLng();pts[which]=[p.lat,p.lng];saveTrip();refreshStateStatus()});
+  if(which==='start')mStart=m;else mEnd=m;
+  if(label)(which==='start'?$('aStart'):$('aEnd')).value=label;
+  saveTrip();
+}
+function wireGeo(btn,input,which){btn.onclick=function(){
+  var q=input.value.trim();if(!q)return;btn.disabled=true;busy('Looking up address…');
+  geocode(q).then(function(r){var ll=[+r.lat,+r.lon];setPoint(which,ll,r.label);if(map)map.setView(ll,15);busy('');}).catch(function(e){busy('');alert(e.message)}).then(function(){btn.disabled=false});
+}}
+wireGeo($('gStart'),$('aStart'),'start');wireGeo($('gEnd'),$('aEnd'),'end');
+function busy(t){var b=$('busy');b.style.display=t?'block':'none';b.textContent=t}
+
+function afterProfileChange(recenter){
+  renderMain();if(window.paintHomeWork)window.paintHomeWork();
+  if(recenter&&map){var v=homeView();map.setView([v[0],v[1]],v[2])}
+}
+
+// ---------- Overpass with mirrors, retries, cache ----------
+// Order matters: overpass-api.de answers 406 to browser requests that carry no Referer (file:// pages), so private.coffee goes first.
+var MIRRORS=['https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass-api.de/api/interpreter'];
+var cache={};
+function overpassFetch(q,label,quiet){
+  var key=q;if(cache[key])return Promise.resolve(cache[key]);
+  var attempts=[];if(/^https?:$/.test(location.protocol))attempts.push('/api/overpass');for(var round=0;round<2;round++)MIRRORS.forEach(function(m){attempts.push(m)});
+  var i=0,lastErr;
+  function next(){
+    if(i>=attempts.length){
+      var hint=location.protocol==='file:'?' Opened from a file, only one map-data server (overpass.private.coffee) works without a Referer, and it is sometimes busy. Try again in a minute, or host the app on https (see README).':' Try again in a minute, or pick points closer together.';
+      return Promise.reject(new Error('All map-data servers failed or timed out ('+(lastErr&&lastErr.message||'unknown')+').'+hint));
+    }
+    var url=attempts[i],n=++i;if(!quiet)busy('Loading '+(label||'road data')+'… (try '+n+' of '+attempts.length+')');
+    var ctl=new AbortController(),t=setTimeout(function(){ctl.abort()},45000);
+    return fetch(url,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl.signal})
+      .then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(j){if(!j.elements)throw new Error('bad response');if(j.remark&&/timed out|out of memory/i.test(j.remark)&&!j.elements.length)throw new Error('server remark: '+j.remark);cache[key]=j;return j})
+      .catch(function(e){clearTimeout(t);lastErr=e.name==='AbortError'?new Error('timeout'):e;return new Promise(function(r){setTimeout(r,300)}).then(next)});
+  }
+  return next();
+}
+function fetchRoads(bb){return overpassFetch(GC.overpassQuery(bb),'road data')}
+
+// ---------- Places (search + reachability by the active cart) ----------
+var placesLayer=null,places=[],placeSel=null,searchToken=0,searchOrigin=null,reachCache={},graphs=[],photonCache={},plTimer=null,plLastQ='';
+function plMsg(t,kind){var m=$('plMsg');m.style.display=t?'block':'none';m.textContent=t||'';m.className='status '+(kind==='bad'?'bad':'ok')}
+function numOr(v,d){return typeof v==='number'&&isFinite(v)?v:d}
+function mapCenter(){
+  var hv=homeView(),c=null;try{c=map&&map.getCenter&&map.getCenter()}catch(e){}
+  return[numOr(c&&c.lat,hv[0]),numOr(c&&c.lng,hv[1])];
+}
+// Search origin: map center, or the user's position only if they picked "My location" (asks the browser on that tap).
+function placesOrigin(){
+  if($('plAround').value!=='me')return Promise.resolve(mapCenter());
+  if(lastPos&&GEO.supported(lastPos[0],lastPos[1]))return Promise.resolve(lastPos);
+  return getPos().then(function(p){
+    if(!acceptFix(p)){plMsg(GEO.outsideMessage(p.coords.latitude,p.coords.longitude),'bad');return mapCenter()}
+    showPos(p,false);return[p.coords.latitude,p.coords.longitude];
+  }).catch(function(e){plMsg(GEO.message(GEO.kindOf(e),location.protocol)+' Using the map center instead.','bad');return mapCenter()});
+}
+function reachOrigin(){
+  if(pts.start)return{ll:pts.start,label:'your start point'};
+  if(lastPos&&GEO.supported(lastPos[0],lastPos[1]))return{ll:lastPos,label:'your location'};
+  return{ll:searchOrigin||mapCenter(),label:'the search center'};
+}
+function placeSearch(kind,arg){
+  var token=++searchToken;plMsg('Searching…');$('placeDetail').style.display='none';
+  return placesOrigin().then(function(origin){
+    if(token!==searchToken)return;
+    searchOrigin=origin;
+    var p;
+    if(kind==='cat'){
+      var q=PL.buildQuery(arg,origin[0],origin[1],+$('plRadius').value);
+      p=overpassFetch(q,'places').then(PL.parseElements);
+    }else{
+      var url=PL.photonUrl(arg,origin);
+      p=photonCache[url]?Promise.resolve(photonCache[url]):fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Place search returned '+r.status);return r.json()}).then(function(j){var l=PL.parsePhoton(j);photonCache[url]=l;return l});
+    }
+    return p.then(function(list){
+      if(token!==searchToken)return;
+      var r=+$('plRadius').value;
+      places=PL.sortByDistance(list,origin);
+      if(kind==='cat')places=places.filter(function(x){return x.distanceM<=r*1.05});
+      places=places.slice(0,PL.MAX_RESULTS);places.forEach(function(x){x.reach=reachCached(x)||{state:'unchecked',text:'Tap to check if your cart can get there'}});
+      placeSel=null;renderPlaces();
+      plMsg(places.length?places.length+' place'+(places.length===1?'':'s')+' found, nearest first.':'Nothing found here. Try a bigger radius, another category, or a different spot on the map.',places.length?'ok':'bad');
+      if(places.length)reachBatch(places);
+    });
+  }).catch(function(e){if(token===searchToken){plMsg(kind==='cat'||/Overpass|map-data/.test(e.message)?e.message:'Place search could not be reached right now ('+e.message+'). Try again, or tap the map to choose your points.','bad');busy('')}}).then(function(){busy('')});
+}
+function renderPlaces(){
+  $('plList').innerHTML=places.map(function(p){var r=p.reach||{};
+    return'<li><button type="button" class="pl'+(p.id===placeSel?' on':'')+'" data-pid="'+esc(p.id)+'"><span class="nm">'+p.emoji+' '+esc(p.name)+'</span><span class="sub">'+esc(p.label)+' · '+PL.fmtDist(p.distanceM)+'</span><span class="bdg '+esc(r.state||'')+'">'+PL.BADGE_ICON[r.state||'unchecked']+' '+esc(r.state==='checking'?'Checking...':(r.text||''))+'</span></button></li>'}).join('');
+  $('plList').querySelectorAll('button.pl').forEach(function(b){b.onclick=function(){selectPlace(b.dataset.pid,true)}});
+  var o=reachOrigin();$('plFrom').textContent=places.length?'Reachability is measured from '+o.label+'. Cart: '+PR.cartLabel(cart())+'.':'';
+  if(mapOk){
+    if(!placesLayer)placesLayer=L.layerGroup().addTo(map);placesLayer.clearLayers();var ll=[];
+    places.forEach(function(p){
+      var m=L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',html:'<div style="font-size:22px;line-height:26px">'+p.emoji+'</div>',iconSize:[26,26]}),title:p.name}).addTo(placesLayer);
+      m.on('click',function(){selectPlace(p.id,false)});ll.push([p.lat,p.lon]);
+    });
+    if(ll.length&&!placeSel)try{map.fitBounds(L.latLngBounds(ll),{padding:[30,30],maxZoom:16})}catch(e){}
+  }
+}
+function placeById(id){return places.filter(function(p){return p.id===id})[0]}
+function selectPlace(id,pan){
+  var p=placeById(id);if(!p)return;placeSel=id;
+  if(pan&&mapOk)map.setView([p.lat,p.lon],Math.max(map.getZoom?map.getZoom():15,16));
+  $('plList').querySelectorAll('button.pl').forEach(function(b){b.classList.toggle('on',b.dataset.pid===id)});
+  drawDetail(p);
+  if(!p.reach||p.reach.state==='unchecked')checkOne(p);
+}
+function drawDetail(p){
+  var r=p.reach||{},d='<b>'+p.emoji+' '+esc(p.name)+'</b><div class="mut">'+esc(p.label)+' · '+PL.fmtDist(p.distanceM)+' from the search center</div>';
+  if(p.address)d+='<div>'+esc(p.address)+'</div>';
+  if(p.hours)d+='<div class="mut">Hours as listed in OpenStreetMap (may be out of date): '+esc(p.hours)+'</div>';
+  if(p.phone)d+='<div>📞 '+esc(p.phone)+'</div>';
+  if(p.website)d+='<div><a href="'+esc(p.website)+'" target="_blank" rel="noopener noreferrer">Website</a></div>';
+  d+='<div class="bdg '+esc(r.state||'')+'" style="margin-top:6px">'+PL.BADGE_ICON[r.state||'unchecked']+' '+esc(r.state==='checking'?'Checking...':(r.text||''))+'</div>';
+  if(r.state==='assumed')d+='<div class="mut">Some road speed limits on the way are not in the map data, so legality is assumed.</div>';
+  if(r.state==='walk'||r.state==='far')d+='<div class="mut">The place is not on a road your cart may use. Park at the nearest legal road and walk the rest.</div>';
+  d+='<div class="row" style="margin-top:8px"><button id="plRoute" type="button">➡️ Route here</button><button id="plStart" type="button">📍 Start from here</button></div><div id="plAct" class="mut"></div>';
+  var el=$('placeDetail');el.innerHTML=d;el.style.display='block';
+  $('plRoute').onclick=function(){setPoint('end',[p.lat,p.lon]);$('aEnd').value=p.name;$('plAct').textContent='Destination set to '+p.name+'. Tap “Find legal route” to plan it.';try{$('go').scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}};
+  $('plStart').onclick=function(){setPoint('start',[p.lat,p.lon]);$('aStart').value=p.name;mode='end';hi();$('plAct').textContent='Start set to '+p.name+'.'};
+}
+// ----- reachability (reuses cached road graphs; one download covers the area) -----
+function reachKey(p,o){return JSON.stringify([p.id,cart(),profile.prefs,Math.round(o.ll[0]*3e3),Math.round(o.ll[1]*3e3)])}
+function reachCached(p){return reachCache[reachKey(p,reachOrigin())]||null}
+function graphFor(points){
+  var s=1e9,n=-1e9,w=1e9,e=-1e9;points.forEach(function(q){s=Math.min(s,q[0]);n=Math.max(n,q[0]);w=Math.min(w,q[1]);e=Math.max(e,q[1])});
+  var m=0.0015;
+  for(var i=0;i<graphs.length;i++){var b=graphs[i].bb;if(s-m>=b.s&&n+m<=b.n&&w-m>=b.w&&e+m<=b.e)return Promise.resolve(graphs[i].g)}
+  var bb=GC.bboxFor([s,w],[n,e],600);
+  if(bb.tooBig)return Promise.reject(new Error('too-far'));
+  return fetchRoads(bb).then(function(j){var g=GC.parseOverpass(j);graphs.unshift({bb:bb,g:g});if(graphs.length>3)graphs.pop();return g});
+}
+function planPlace(g,p,o){
+  var res=GC.planRoute(g,status,o.ll,[p.lat,p.lon],{cartMph:cartMph()});
+  var r=PL.reachability(res,p);reachCache[reachKey(p,o)]=r;p.reach=r;return r;
+}
+function refreshBadges(){renderPlaces();var p=placeById(placeSel);if(p)drawDetail(p)}
+function reachBatch(list){
+  computeStatus();var o=reachOrigin();
+  if(!status.ok){list.forEach(function(p){p.reach={state:'none',text:'Your cart is not eligible yet (see cart status)'}});renderPlaces();return}
+  var token=searchToken,batch=PL.pickBatch(list.filter(function(p){return !reachCached(p)}),o.ll,10,GC.MAX_SPAN_KM);
+  if(!batch.length){renderPlaces();return}
+  batch.forEach(function(p){p.reach={state:'checking'}});renderPlaces();
+  graphFor([o.ll].concat(batch.map(function(p){return[p.lat,p.lon]}))).then(function(g){
+    var i=0;(function step(){
+      if(token!==searchToken||i>=batch.length){busy('');return}
+      planPlace(g,batch[i++],o);refreshBadges();setTimeout(step,0);
+    })();
+  }).catch(function(e){busy('');batch.forEach(function(p){p.reach={state:'unchecked',text:'Could not check yet: '+e.message+' Tap the place to retry.'}});refreshBadges()});
+}
+function checkOne(p){
+  computeStatus();var o=reachOrigin();
+  if(!status.ok){p.reach={state:'none',text:'Your cart is not eligible yet (see cart status)'};refreshBadges();return}
+  var c=reachCached(p);if(c){p.reach=c;refreshBadges();return}
+  p.reach={state:'checking'};refreshBadges();
+  graphFor([o.ll,[p.lat,p.lon]]).then(function(g){planPlace(g,p,o);busy('');refreshBadges()}).catch(function(e){busy('');
+    p.reach={state:'unchecked',text:e.message==='too-far'?'More than '+GC.MAX_SPAN_KM+' km from '+o.label+', so not checked. Use “Route here” and pick a closer start.':'Could not check: '+e.message};refreshBadges()});
+}
+(function(){
+  var ch=$('plChips');ch.innerHTML=PL.CATEGORIES.map(function(c){return'<button class="chip" type="button" data-cat="'+c.id+'">'+c.emoji+' '+esc(c.label)+'</button>'}).join('');
+  ch.querySelectorAll('[data-cat]').forEach(function(b){b.onclick=function(){
+    ch.querySelectorAll('[data-cat]').forEach(function(x){x.classList.toggle('sel',x===b)});$('plQuery').value='';plLastQ='';placeSearch('cat',b.dataset.cat)}});
+  function runText(){var q=$('plQuery').value.trim();if(q.length<2||q===plLastQ)return;plLastQ=q;ch.querySelectorAll('[data-cat]').forEach(function(x){x.classList.remove('sel')});placeSearch('text',q)}
+  $('plGo').onclick=function(){clearTimeout(plTimer);runText()};
+  $('plRadius').onchange=function(){var a=ch.querySelector('.sel');if(a)placeSearch('cat',a.dataset.cat)};
+})();
+
+// ---------- Route ----------
+function fmtTime(s){var m=Math.round(s/60);return m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min'}
+function mi(m){return VEH.distLabel(m,ru())}
+$('go').onclick=function(){
+  computeStatus();
+  var out=$('result'),card=$('resCard');card.style.display='block';
+  if(!status.ok){out.innerHTML='<div class="status bad"><b class="t">Fix your cart first</b>'+esc(status.label)+'</div>';return}
+  var need=[];['start','end'].forEach(function(w){var inp=w==='start'?$('aStart'):$('aEnd');if(!pts[w]&&inp.value.trim())need.push(geocode(inp.value.trim()).then(function(r){setPoint(w,[+r.lat,+r.lon])}))});
+  if(need.length){busy('Looking up addresses…');Promise.all(need).then(function(){busy('');$('go').click()}).catch(function(e){busy('');out.innerHTML='<div class="status bad">'+esc(e.message)+'</div>'});return}
+  if(!pts.start||!pts.end){out.innerHTML='<div class="status bad">Set both a start and an end point on the map or by address.</div>';return}
+  var bb=GC.bboxFor(pts.start,pts.end,GC.ROUTE_PADS[0]);bb.padIndex=0;bb.padM=GC.ROUTE_PADS[0];
+  if(bb.tooBig){out.innerHTML='<div class="status bad">Those points are '+bb.span_km.toFixed(1)+' km apart. This prototype is limited to '+GC.MAX_SPAN_KM+' km to keep map downloads fast.</div>';return}
+  $('go').disabled=true;out.innerHTML='';
+  var startPt=pts.start,endPt=pts.end,widened=0;
+  function attempt(bb){
+    return fetchRoads(bb).then(function(json){
+      busy('Planning route…');
+      return new Promise(function(r){setTimeout(r,20)}).then(function(){
+        var g=GC.parseOverpass(json);
+        var r=GC.planRoute(g,status,startPt,endPt,{cartMph:cartMph()});
+        var wider=!r.ok&&r.error==='no-legal-route'?GC.widerBbox(startPt,endPt,bb.padIndex):null;
+        if(wider){widened=wider.padM;busy('No route in the small area, widening the map search to '+(wider.padM/1000).toFixed(1)+' km around the trip…');return attempt(wider)}
+        if(widened&&r.ok)r.warnings=(r.warnings||[]).concat(['The route needed a wider map area ('+(widened/1000).toFixed(1)+' km around your trip) because the direct area had no connection for your vehicle.']);
+        if(widened&&!r.ok)r.message=(r.message||'')+' I also searched a wider area ('+(bb.padM/1000).toFixed(1)+' km around the trip).';
+        show(r,g);
+      });
+    });
+  }
+  attempt(bb)
+  .catch(function(e){out.innerHTML='<div class="status bad"><b class="t">Couldn\'t load road data</b>'+esc(e.message)+'</div>'})
+  .then(function(){$('go').disabled=false;busy('')});
+};
+function colorFor(s){return s.basis==='illegal'?{color:'#d12b2b',dashArray:'2 8',weight:6}:(s.basis==='tagged'||s.basis==='posted'||s.basis==='crossing')?{color:'#1f6fd1',weight:6}:{color:'#e08a00',dashArray:'10 8',weight:6}}
+function show(r,g){
+  var out=$('result');if(routeLayer)routeLayer.clearLayers();
+  var h='';
+  function draw(d,alt){
+    if(!mapOk)return;var all=[];
+    d.segments.forEach(function(s){var st=colorFor(s);if(alt&&s.basis!=='illegal')st={color:'#7a8793',weight:5,dashArray:'6 6'};
+      L.polyline(s.coords,st).addTo(routeLayer).bindTooltip(s.name+(s.speed?' · '+s.speed+' '+ulab(ru()):'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason+(s.lsvOnly?' · A registered street-legal LSV could use this road':''):s.basis));all=all.concat(s.coords)});
+    d.crossings.forEach(function(c){L.marker(c.at,{icon:L.divIcon({className:'',html:'<div style="font-size:22px">⚠️</div>',iconSize:[24,24]})}).addTo(routeLayer).bindTooltip('Crossing '+c.road+(c.speed?' ('+c.speed+' '+ulab(ru())+(c.assumedSpeed?', assumed':'')+')':''))});
+    if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[30,30]});
+  }
+  function lsvCallout(){
+    var sr=status&&status.state,fl=!sr||sr.verified,t=sr&&!fl?ST.get(sr.abbr):null,lim=status&&status.lsvLimit||35;
+    var tail=fl?'Check with your county tax collector or FLHSMV for current requirements. <a href="https://www.flhsmv.gov/pdf/mv/lowspeedvehicles.pdf" target="_blank" rel="noopener">Florida steps to register an LSV (FLHSMV)</a> · <a href="https://www.flhsmv.gov/pdf/forms/86064.pdf" target="_blank" rel="noopener">Golf cart to LSV affidavit</a>'
+      :'<a href="'+esc(t?ST.dmvLink(t):'https://www.google.com/search?q=state+DMV+low+speed+vehicle+registration')+'" target="_blank" rel="noopener">Check your state DMV for LSV registration</a>';
+    return'<div class="status ok" id="lsvCallout"><b class="t">To take this route you\'d need to make your cart road-legal (a street-legal LSV).</b>Titled, registered and plated as an LSV, insured (PIP and property damage liability), with headlights, tail/stop lights, turn signals, reflectors, mirror, windshield, parking brake, seat belts and a VIN. Top speed over 20 and up to 25 mph; roads posted '+lim+' mph or less. '+tail+'</div>'}
+  if(r.ok){
+    draw(r,false);
+    var roads=[],last='';r.segments.forEach(function(s){if(s.name!==last){roads.push(s);last=s.name}});
+    h+='<div class="status ok"><span class="big">'+mi(r.distance_m)+' · '+fmtTime(r.time_s)+'</span><div class="mut">at '+VEH.speedToDisplay(cartMph(),ru())+' '+ulab(ru())+(status.cls==='golf'||status.cls==='lsv'?', plus ~20 s per crossing':' top speed, slower on slower roads')+'</div>'+
+      '<div style="margin-top:6px">'+esc(status.label)+'</div></div>';
+    if(r.assumedMeters>0)h+='<p class="warn">⚠ '+Math.round(100*r.assumedMeters/r.distance_m)+'% of this route ('+mi(r.assumedMeters)+', orange dashed) is <b>assumed</b> legal: the speed limit was missing in the map data'+(status.rules&&status.rules.cls==='veh'?'':' or, for golf carts, the local golf cart designation is unverified')+'. Look for posted signs.</p>';
+    if(r.crossings.length){h+='<p><b>Crossings ('+r.crossings.length+')</b> – you cross roads your cart may not drive on:</p><ul>'+r.crossings.map(function(c){return'<li>'+esc(c.road)+(c.speed?' ('+c.speed+' '+ulab(ru())+(c.assumedSpeed?', assumed':'')+')':'')+(c.median?' – via median':'')+'</li>'}).join('')+'</ul>'+(status.cls==='golf'?'<p class="mut">Golf carts may only cross state highways at FDOT-approved crossings (s. 316.212(2)). Cross only where it is safe and legal.</p>':'')}
+    (r.warnings||[]).forEach(function(w){h+='<p class="warn">'+esc(w)+'</p>'});
+    h+='<details><summary>Roads on this route ('+roads.length+')</summary><ol class="steps">'+roads.map(function(s){return'<li>'+esc(s.name)+(s.speed?' – '+s.speed+' '+ulab(ru())+(s.basis==='assumed'||s.basis==='posted-designation-assumed'?' (assumed legal)':''):'')+'</li>'}).join('')+'</ol></details>';
+  }else{
+    h+='<div class="status bad"><b class="t">No legal route</b>'+esc(r.message||'')+'</div>';
+    if(r.alternative){draw(r.alternative,true);h+='<p>The grey dashed/red dotted line shows the shortest path if the illegal road(s) were allowed. <b>Your cart may not use the red parts.</b> '+mi(r.alternative.distance_m)+'.</p>';if(r.lsvUpgrade)h+=lsvCallout()}
+  }
+  h+=stateWarn(status)+euroWarn(status);
+  h+='<p class="mut">Legality is simplified. Check local rules and signs before you go.</p>';
+  out.innerHTML=h;
+  $('resCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ---------- Autocomplete (Photon type-ahead) ----------
+var acOpen=null,acSeq=0,acCache={};
+document.addEventListener('pointerdown',function(e){if(acOpen&&!acOpen.contains(e.target))acOpen.close()});
+function acBias(){return lastPos&&GEO.supported(lastPos[0],lastPos[1])?lastPos:mapCenter()}
+function rememberPlace(it){if(!profile||!profile.setupDone)return;profile.recents=AC.addRecent(profile.recents,{label:it.label,lat:it.lat,lon:it.lon,icon:it.icon});persist()}
+function attachAutocomplete(input,o){
+  var host=input.parentElement;host.style.position='relative';
+  var id='ac'+(++acSeq),ul=document.createElement('ul');ul.className='acl';ul.id=id+'-list';ul.setAttribute('role','listbox');ul.setAttribute('aria-label','Suggestions');ul.hidden=true;host.appendChild(ul);
+  input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-expanded','false');input.setAttribute('aria-controls',ul.id);input.setAttribute('autocomplete','off');input.setAttribute('autocapitalize','off');
+  var st={state:'idle',rows:[],active:-1,ctl:null,timer:null,seq:0,query:'',items:[],blur:null};
+  var api={contains:function(t){return t===input||ul.contains(t)},close:close};
+  function setActive(i){st.active=i;[].forEach.call(ul.children,function(li,k){li.setAttribute('aria-selected',k===i?'true':'false')});
+    input.setAttribute('aria-activedescendant',i>=0?id+'-o'+i:'');if(i>=0&&ul.children[i]&&ul.children[i].scrollIntoView)try{ul.children[i].scrollIntoView({block:'nearest'})}catch(e){}}
+  function render(){
+    st.rows=AC.buildRows({state:st.state,items:st.items,query:st.query,withMyLocation:!!o.withMyLocation,recents:o.getRecents?o.getRecents():[]});
+    ul.innerHTML='';
+    st.rows.forEach(function(r,i){
+      var li=document.createElement('li');li.id=id+'-o'+i;
+      if(r.type==='msg'){li.className='msg';li.setAttribute('role','presentation');li.setAttribute('aria-live','polite');li.textContent=r.primary}
+      else{li.setAttribute('role','option');li.setAttribute('aria-selected','false');
+        var ic=document.createElement('span');ic.className='ic';ic.setAttribute('aria-hidden','true');ic.textContent=r.icon||'📍';
+        var tx=document.createElement('div');tx.className='tx';var p=document.createElement('div');p.className='p';p.textContent=r.primary;tx.appendChild(p);
+        if(r.secondary){var s2=document.createElement('div');s2.className='s';s2.textContent=r.secondary;tx.appendChild(s2)}
+        li.appendChild(ic);li.appendChild(tx);
+        li.addEventListener('pointerdown',function(e){clearTimeout(st.blur);e.preventDefault()});
+        li.addEventListener('mousedown',function(e){e.preventDefault()});
+        li.addEventListener('click',function(){choose(i)});
+      }
+      ul.appendChild(li);
+    });
+    var show=st.rows.length>0;ul.hidden=!show;input.setAttribute('aria-expanded',show?'true':'false');
+    st.active=-1;input.setAttribute('aria-activedescendant','');
+    if(show)acOpen=api;
+  }
+  function close(){clearTimeout(st.timer);clearTimeout(st.blur);if(st.ctl){try{st.ctl.abort()}catch(e){}st.ctl=null}st.seq++;ul.hidden=true;input.setAttribute('aria-expanded','false');input.setAttribute('aria-activedescendant','');if(acOpen===api)acOpen=null}
+  function idle(){st.state='idle';st.items=[];st.query='';render()}
+  function run(q){
+    if(st.ctl){try{st.ctl.abort()}catch(e){}}
+    var ctl=new AbortController();st.ctl=ctl;var seq=++st.seq;st.query=q;st.state='loading';st.items=[];render();
+    if(o.nearby&&AC.isCategoryQuery(q)){
+      var rc=refPoint(),cc='c|'+q.toLowerCase()+'|'+rc[0].toFixed(2)+','+rc[1].toFixed(2);
+      var pc=acCache[cc]?Promise.resolve(acCache[cc]):findNearbyCategory(q,{signal:ctl.signal,maxWait:2500}).then(function(res){if(!res.ok&&!res.items.length)throw new Error('all sources failed');if(res.items.length)acCache[cc]=res.items;return res.items});
+      pc.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
+       .catch(function(e){if(seq!==st.seq||(e&&e.name==='AbortError'))return;st.state='error';st.items=[];render()});
+      return;
+    }
+    if(o.nearby&&AC.isNameQuery(q)){
+      var ref=refPoint(),ck='n|'+q.toLowerCase()+'|'+ref[0].toFixed(2)+','+ref[1].toFixed(2);
+      var pn=acCache[ck]?Promise.resolve(acCache[ck]):findNearbyByName(q,{signal:ctl.signal,maxWait:2500}).then(function(res){if(!res.ok&&!res.items.length)throw new Error('all sources failed');if(res.items.length)acCache[ck]=res.items;return res.items});
+      pn.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
+       .catch(function(e){if(seq!==st.seq||(e&&e.name==='AbortError'))return;st.state='error';st.items=[];render()});
+      return;
+    }
+    var url=AC.suggestUrl(q,acBias());
+    var p=acCache[url]?Promise.resolve(acCache[url]):fetch(url,{headers:{'Accept':'application/json'},signal:ctl.signal}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){var l=AC.parse(j);acCache[url]=l;return l});
+    p.then(function(items){if(seq!==st.seq)return;st.items=items;st.state=items.length?'results':'empty';render()})
+     .catch(function(e){if(seq!==st.seq||(e&&e.name==='AbortError'))return;st.state='error';st.items=[];render()});
+  }
+  function pick(it){
+    input.value=it.label;close();
+    if(!o.noRecent)rememberPlace(it);
+    o.onPick(it);
+  }
+  function choose(i){
+    var r=st.rows[i];if(!r||r.type==='msg')return;
+    if(r.type==='myloc'){close();input.value='';if(o.onMyLocation)o.onMyLocation();return}
+    if(r.type==='clear'){if(profile){profile.recents=[];persist()}idle();return}
+    pick(r.item);
+  }
+  input.addEventListener('input',function(){
+    clearTimeout(st.timer);var q=input.value;
+    if(!q.trim()){if(st.ctl){try{st.ctl.abort()}catch(e){}}st.seq++;idle();return}
+    if(!AC.shouldSearch(q)){close();return}
+    st.timer=setTimeout(function(){run(q.trim())},AC.DEBOUNCE_MS);
+  });
+  input.addEventListener('focus',function(){clearTimeout(st.blur);if(!input.value.trim())idle();else if(AC.shouldSearch(input.value)&&st.rows.length&&st.state==='results')render()});
+  input.addEventListener('blur',function(){clearTimeout(st.blur);st.blur=setTimeout(close,200)});
+  input.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      if(ul.hidden){if(!input.value.trim())idle();else if(AC.shouldSearch(input.value))run(input.value.trim());return}
+      setActive(AC.moveActive(st.rows,st.active,e.key==='ArrowDown'?1:-1));
+    }else if(e.key==='Enter'){
+      if(!ul.hidden&&st.active>=0){e.preventDefault();choose(st.active)}
+      else{clearTimeout(st.timer);close();if(o.onEnter){e.preventDefault();o.onEnter()}}
+    }else if(e.key==='Escape'){if(!ul.hidden){e.preventDefault();close()}}
+  });
+  return api;
+}
+function afterPick(which,it){var ll=[it.lat,it.lon];setPoint(which,ll,it.label);if(map)map.setView(ll,15)}
+attachAutocomplete($('aStart'),{nearby:true,withMyLocation:true,getRecents:function(){return profile&&profile.recents||[]},
+  onPick:function(it){afterPick('start',it);mode='end';hi()},onMyLocation:function(){$('bLocStart').click()},onEnter:function(){$('gStart').click()}});
+attachAutocomplete($('aEnd'),{nearby:true,getRecents:function(){return profile&&profile.recents||[]},onPick:function(it){afterPick('end',it)},onEnter:function(){$('gEnd').click()}});
+attachAutocomplete($('plQuery'),{getRecents:function(){return profile&&profile.recents||[]},
+  onPick:function(it){
+    var cl=PL.classify(it.tags),origin=mapCenter();searchOrigin=origin;
+    var p={id:'ac/'+it.id,source:'photon',lat:it.lat,lon:it.lon,name:it.primary,cat:cl.cat,emoji:PL.EMOJI[cl.cat]||'📍',label:cl.label,address:it.address||'',hours:'',phone:'',website:'',
+      distanceM:PL.hav(origin,[it.lat,it.lon]),reach:{state:'unchecked',text:'Tap to check if your cart can get there'}};
+    plLastQ=it.label;places=[p];placeSel=null;renderPlaces();plMsg('Showing your pick. Press Search for more results.');selectPlace(p.id,true);
+  },onEnter:function(){$('plGo').click()}});
+
+// ---------- Start ----------
+if(!profile||!profile.setupDone){profile=null;openWizard(false);profile=PR.defaultProfile();profile.setupDone=false}
+else persist();
+$('storeNotice').style.display=Store.persistent?'none':'block';
+renderMain();
+(function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea&&!(t.ea===t.sa&&t.s&&t.e&&(t.s[0]!==t.e[0]||t.s[1]!==t.e[1])))$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
+['aStart','aEnd'].forEach(function(id){$(id).addEventListener('input',saveTrip)});
+window.__cartroute={getTile:function(){return tileChainList[tileIdx]&&tileChainList[tileIdx].key},getProfile:function(){return profile},store:Store,getPts:function(){return pts},getPlaces:function(){return places},isFollowing:function(){return watchId!==null}};
+
+// ---------- bottom sheet + layout ----------
+(function(){
+var sh=$('sheet'),grab=$('grab'),states=['peek','half','full'];
+function hFor(st){var vh=window.innerHeight;return st==='peek'?170:st==='half'?Math.round(vh*0.5):Math.round(vh*0.88)}
+function relayout(){var tc=$('topcard');if(tc)document.documentElement.style.setProperty('--topH',tc.offsetHeight+'px');if(map)try{map.invalidateSize()}catch(e){}}
+function setState(st){sh.setAttribute('data-state',st);var h=hFor(st);document.documentElement.style.setProperty('--sh',h+'px');document.documentElement.style.setProperty('--sheetH',Math.min(h,Math.round(window.innerHeight*0.5))+'px');setTimeout(relayout,230)}
+window.sheetState=setState;
+grab.addEventListener('click',function(){if(grab._dragged){grab._dragged=false;return}var i=states.indexOf(sh.getAttribute('data-state'));setState(states[(i+1)%3])});
+var y0=null,h0=0;
+grab.addEventListener('pointerdown',function(e){y0=e.clientY;h0=sh.offsetHeight;grab._dragged=false;sh.classList.add('drag');try{grab.setPointerCapture(e.pointerId)}catch(x){}});
+grab.addEventListener('pointermove',function(e){if(y0==null)return;var d=y0-e.clientY;if(Math.abs(d)>6)grab._dragged=true;var h=Math.max(130,Math.min(window.innerHeight*0.92,h0+d));document.documentElement.style.setProperty('--sh',h+'px')});
+function end(e){if(y0==null)return;sh.classList.remove('drag');var h=sh.offsetHeight;y0=null;if(!grab._dragged)return;var best='peek',bd=1e9;states.forEach(function(st){var d=Math.abs(hFor(st)-h);if(d<bd){bd=d;best=st}});setState(best)}
+grab.addEventListener('pointerup',end);grab.addEventListener('pointercancel',end);
+window.addEventListener('resize',function(){setState(sh.getAttribute('data-state'));relayout()});
+window.addEventListener('orientationchange',function(){setTimeout(function(){setState(sh.getAttribute('data-state'))},200)});
+// peek summary + auto-expand when a result appears
+var res=$('result');
+function sum(){var t=(res.textContent||'').replace(/\s+/g,' ').trim();$('peekSum').textContent=t?t.slice(0,110):'';if(t&&sh.getAttribute('data-state')==='peek')setState('half')}
+if(window.MutationObserver)new MutationObserver(sum).observe(res,{childList:true,subtree:true});
+// tapping the map collapses a big sheet so the map stays visible
+if(map)map.on('click',function(){if(sh.getAttribute('data-state')==='full')setState('peek')});
+if(map&&map.on)map.on('moveend',refreshStateStatus);
+setState('peek');relayout();setTimeout(relayout,400);
+})();
+
+
+// ---------- optional road-legality layer for the visible map (display only; uses GC.classifyWay via GC.classifyViewport) ----------
+(function(){
+var box=$('showLegal'),note=$('legalNote'),hint=$('legalHint'),layer=null,timer=null,token=0,lastKey='';
+function clear(){if(layer)layer.clearLayers()}
+function say(t){note.textContent=t?'('+t+')':''}
+function style(s){var c=colorFor({basis:s.basis});c.weight=4;c.opacity=.75;return c}
+function render(json,st){
+  clear();if(!layer)layer=L.layerGroup();if(!map.hasLayer(layer))layer.addTo(map);
+  GC.classifyViewport(json,st.rules).forEach(function(s){
+    var pl=L.polyline(s.coords,style(s)).addTo(layer);
+    pl.bindTooltip(s.name+(s.speed?' · '+s.speed+' '+ulab(ru()):'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason+(s.lsvOnly?' · A registered street-legal LSV could use this road':''):s.basis+' (likely legal; local rules may differ)'));
+    if(pl.bringToBack)pl.bringToBack();
+  });
+}
+function refresh(force){
+  if(!box.checked||!map)return;
+  var st=status;if(!st||!st.ok||!st.rules){clear();say('pick an eligible cart');hint.style.display='block';return}
+  hint.style.display='block';
+  var b=map.getBounds(),pl=GC.viewportPlan({s:b.getSouth(),w:b.getWest(),n:b.getNorth(),e:b.getEast()},map.getZoom());
+  if(!pl.ok){clear();lastKey='';say(pl.reason==='zoom'?'Zoom in to see road legality':'Zoom in more: area too large');return}
+  var q=GC.overpassQuery(pl.bb),key=q+'|'+JSON.stringify(st.rules);
+  if(!force&&key===lastKey)return;
+  var my=++token;say('loading…');
+  overpassFetch(q,'road legality').then(function(j){
+    if(my!==token||!box.checked)return;busy('');lastKey=key;render(j,status&&status.ok?status:st);say('');
+  }).catch(function(e){if(my!==token)return;busy('');say('could not load roads; pan or toggle to retry')});
+}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){refresh(false)},600)}
+box.addEventListener('change',function(){
+  try{localStorage.setItem('cartroute.showLegal',box.checked?'1':'0')}catch(e){}
+  token++;
+  if(!box.checked){clear();if(layer&&map&&map.hasLayer(layer))map.removeLayer(layer);say('');hint.style.display='none';lastKey='';return}
+  refresh(true);
+});
+if(map)map.on('moveend',sched);
+// refetch/recolor when cart or profile changes
+var origAfter=afterProfileChange;
+afterProfileChange=function(r){origAfter(r);lastKey='';if(box.checked)sched()};
+try{if(localStorage.getItem('cartroute.showLegal')==='1'){box.checked=true;box.dispatchEvent(new Event('change'))}}catch(e){}
+})();
+
+// ---------- optional restricted-roads overlay (restricted.geojson next to index.html; display only, router does not use it yet) ----------
+(function(){
+var box=$('showRestricted'),note=$('restrNote'),layer=null,loaded=false,tried=false;
+function load(){
+  if(tried||!map||!window.fetch||!window.L)return Promise.resolve();tried=true;
+  return fetch('restricted.geojson?v='+Date.now()).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(gj){
+    layer=L.geoJSON(gj,{style:function(){return{color:'#b00020',weight:5,opacity:.85,dashArray:'8 6'}},onEachFeature:function(f,l){
+      var p=f.properties||{};l.bindPopup('<b>'+(p.example?'EXAMPLE – ':'')+'Restricted road</b><br>'+esc(p.reason||'')+'<br><span class="mut">Source: '+esc(p.source||'?')+' · '+esc(p.retrieved||'?')+' · confidence: '+esc(p.confidence||'?')+'</span>')}});
+    loaded=true;note.textContent='('+(gj.features||[]).length+' segment'+((gj.features||[]).length===1?'':'s')+')';
+  }).catch(function(){note.textContent='(not available here)';box.disabled=true;box.checked=false});
+}
+box.addEventListener('change',function(){load().then(function(){if(!layer||!map)return;if(box.checked)layer.addTo(map);else map.removeLayer(layer)})});
+try{if(localStorage.getItem('cartroute.showRestricted')==='1'){box.checked=true;box.dispatchEvent(new Event('change'))}}catch(e){}
+box.addEventListener('change',function(){try{localStorage.setItem('cartroute.showRestricted',box.checked?'1':'0')}catch(e){}});
+})();
+})();
+</script>
+</body>
+</html>
