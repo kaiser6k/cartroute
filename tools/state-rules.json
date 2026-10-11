@@ -1,0 +1,839 @@
+[
+  {
+    "state": "Alabama",
+    "abbr": "AL",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Not generally allowed on public roads. Only Class 2 municipalities may authorize certified LSVs on designated municipal streets (Ala. Code 11-73-1 to -7). Some local acts (e.g., Baldwin, Dale counties) allow golf carts on designated streets with permit, insurance, equipment, licensed driver, ~25 mph roads.",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": "local option (designated municipal streets only)",
+    "lsvRequirements": "Registered LSV ($50/yr fee, Ala. Code 40-12-242.2); FMVSS 500",
+    "stateHighways": "not verified",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/alabama/title-11/title-2/chapter-73/",
+      "https://www.cga.ct.gov/2023/rpt/pdf/2023-R-0242.pdf",
+      "https://www.ltrc.la.gov/pdf/2020/19-02TA-SA_printready.pdf"
+    ],
+    "notes": "LSV is local-option. Golf-cart road rules are county/city-specific; check local ordinance."
+  },
+  {
+    "state": "Alaska",
+    "abbr": "AK",
+    "golfCartOnRoads": "limited",
+    "golfCartConditions": "No golf-cart-specific road law found. A cart can use roads only if it qualifies as a registered LSV; local governments may designate highways (older source).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Registered LSV: 4 wheels, 20-25 mph, FMVSS-consistent equipment, license, insurance. 45 mph allowed in limited municipal/unorganized-borough cases.",
+    "stateHighways": "May cross higher-speed roads at authorized intersections; municipalities may restrict",
+    "confidence": "medium",
+    "sources": [
+      "https://legislative.observer/statutes/28.35.261/",
+      "https://dmv.alaska.gov/vehicle-services/low-speed-vehicle/",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Golf-cart point is from a 2020 secondary review; treat as not verified."
+  },
+  {
+    "state": "Arizona",
+    "abbr": "AZ",
+    "golfCartOnRoads": "not verified",
+    "golfCartConditions": "No statewide golf-cart road-designation statute found in this research. ARS 28-777 defines golf carts (<=25 mph, <1,800 lb unladen) for turning-yield rules; ARS 28-721(C) allows carts/NEVs on paved shoulders in specified age-restricted communities. A 2020 secondary review says carts need registration/insurance and roads <35 mph - not confirmed.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "NEV: emission-free, 4 wheels, max 25 mph; cannot be driven on highways posted >35 mph (ARS 28-966); registration/insurance",
+    "stateHighways": "LSV/NEV may cross at designated intersections (older source)",
+    "confidence": "low",
+    "sources": [
+      "https://www.azleg.gov/ars/28/00777.htm",
+      "https://www.azleg.gov/ars/28/00966.htm",
+      "https://www.ltrc.la.gov/pdf/2020/19-02TA-SA_printready.pdf"
+    ],
+    "notes": "Local ordinances (cities, communities) govern most cart use."
+  },
+  {
+    "state": "Arkansas",
+    "abbr": "AR",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "City may authorize golf carts by ordinance on city streets that are not state/federal highways or county roads; statute (A.C.A. 14-54-1410) limits to travel between owner's residence and a golf course; no state registration or license required for that use.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "not verified (no state LSV law found)",
+    "lsvRequirements": "No statewide LSV statute found (OLR 2023 lists AR as lacking one)",
+    "stateHighways": "Excluded (streets that are state/federal highways or county roads)",
+    "confidence": "medium",
+    "sources": [
+      "http://www.laws9.com/statutes/arkansas/title-14/subtitle-3/chapter-54/subchapter-14/14-54-1410",
+      "https://www.cga.ct.gov/2023/rpt/pdf/2023-R-0242.pdf"
+    ],
+    "notes": "Second-hand statute text; verify on arkleg.state.ar.us."
+  },
+  {
+    "state": "California",
+    "abbr": "CA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local authority may designate roads (CVC 21115 / 21716); roads generally 25 mph or less; golf cart defined <=15 mph (CVC 345); equipment required; license (16+) per older review.",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Roads posted <=35 mph unless restricted; FMVSS 500; registered/insured; local authorities may restrict (CVC 21266)",
+    "stateHighways": "Crossing at uncontrolled state-highway intersections only with state agency approval (older source)",
+    "confidence": "medium",
+    "sources": [
+      "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&sectionNum=21716",
+      "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&sectionNum=21115.",
+      "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&sectionNum=345",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Statute pages located but text not fully read; combined with secondary summaries."
+  },
+  {
+    "state": "Colorado",
+    "abbr": "CO",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local authority may authorize golf cars by ordinance on local roads (C.R.S. 42-4-111); not state highways; driver must be 16+; unlicensed drivers may not carry passengers <21; may cross a state highway at-grade only to continue on a non-state road; signs required before ordinance takes effect.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "local option (no statewide limit; older source says 35 for LSEV)",
+    "lsvRequirements": "Low-speed electric vehicle: local authorities decide; statutory equipment",
+    "stateHighways": "Not allowed on state highways except at-grade crossing",
+    "confidence": "medium",
+    "sources": [
+      "https://colorado.public.law/statutes/crs_42-4-111",
+      "https://getpocketlaw.com/law/state_colorado/section-42-4-111-powers-of-local-authorities_5ee75ef88699",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Golf car definition: design speed <20 mph (C.R.S. 42-1-102, per 2020 review)."
+  },
+  {
+    "state": "Connecticut",
+    "abbr": "CT",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local traffic authority may permit golf carts on roads under its jurisdiction: daylight only, posted limit 25 mph or less, horn, visibility flag, valid driver license (CGS 14-300g).",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": "not allowed - CT does not authorize LSVs",
+    "lsvRequirements": "LSVs not registered by DMV",
+    "stateHighways": "Not addressed (local roads only)",
+    "confidence": "medium",
+    "sources": [
+      "https://www.cga.ct.gov/current/pub/chap_249.htm",
+      "https://www.cga.ct.gov/2020/rpt/pdf/2020-R-0259.pdf",
+      "https://www.cga.ct.gov/2023/rpt/pdf/2023-R-0242.pdf"
+    ],
+    "notes": "Local towns (e.g., East Lyme, Old Lyme) add registration/designated roads."
+  },
+  {
+    "state": "Delaware",
+    "abbr": "DE",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "No golf-cart road law found. A cart is legal only if it qualifies as a registered LSV.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Titled, registered, insured, plate, licensed driver; FMVSS 500; GVWR under 3,000 lb (<2,500 in 2008 source)",
+    "stateHighways": "Cross higher-speed roads at intersections; generally not unincorporated dual highways",
+    "confidence": "medium",
+    "sources": [
+      "https://dmv.de.gov/VehicleServices/low-speed-vehicles/",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "District of Columbia",
+    "abbr": "DC",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "No golf-cart class, permit or designated-street authority found; an unregistered motor vehicle cannot use public highways.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "not verified",
+    "lsvRequirements": "LSV defined (>20-25 mph, <3,000 lb, FMVSS 500) in 18 DCMR 9901; road-speed limit for LSVs not found",
+    "stateHighways": "not verified",
+    "confidence": "low",
+    "sources": [
+      "https://dcrules.elaws.us/dcmr/18-9901",
+      "https://cityrulelookup.com/states/district-of-columbia/mobility/golf-carts-lsv"
+    ],
+    "notes": "Practically, treat DC as not available for carts. Not on the 2023 OLR list."
+  },
+  {
+    "state": "Florida",
+    "abbr": "FL",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Golf carts (<=20 mph) allowed only on county roads/city streets designated for them, posted 30 mph or less, with signs; daytime only (per statute summary); under 18 needs learner's/driver license, 18+ needs photo ID (from Oct 1 2023); may cross county road intersecting an approved road/golf course/mobile home park; local rules may be stricter.",
+    "golfCartMaxRoadMph": 30,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV (>20-25 mph): registered, titled, insured (PIP/PDL); driver license; headlamps, stop lamps, turn signals, tail lamps, reflectors, parking brake, mirror, windshield, seat belts, VIN",
+    "stateHighways": "Crossing county road at signed intersections only (golf carts); LSV may cross at intersections; local may prohibit",
+    "confidence": "high",
+    "sources": [
+      "https://www.flhsmv.gov/safety-center/consumer-education/low-speed-vehicles/",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Read from FLHSMV official page quoting Fla. Stat. 320.01, 316.212, 316.2122. Daytime-only rule from 2020 secondary review (316.212)."
+  },
+  {
+    "state": "Georgia",
+    "abbr": "GA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Georgia 'golf cart' = golf-course use only (<15 mph average). Road use is as a Personal Transportation Vehicle (PTV): local authority may designate streets by ordinance (O.C.G.A. 40-6-331); license generally required; local registration up to $15/5 yrs; PTV <20 mph. Local examples limit to roads 25 mph or less. A 2020 secondary review says 35 mph.",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": "35 (not read from statute; secondary)",
+    "lsvRequirements": "LSV treated as motor vehicle: registered/insured (DPS notes LSV rules under 40-6-360 to -362)",
+    "stateHighways": "Local PTVs not allowed on state routes (local example); crossings per local ordinance",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/georgia/title-40/chapter-6/article-13/part-3/section-40-6-331/",
+      "https://dps.georgia.gov/georgia-code-low-speed-vehicles",
+      "https://dps.georgia.gov/document/document/dps-34-low-speed-vehicles-trifold-july-2024/download",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "PTV statute text read (high for local-option structure); road speed cap and LSV speed not read from statute so overall medium."
+  },
+  {
+    "state": "Hawaii",
+    "abbr": "HI",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Standard golf carts not generally allowed on public roads; Hawaii County bans with limited exceptions.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Neighborhood electric vehicle: FMVSS 500, <=25 mph, registered",
+    "stateHighways": "May cross faster roads at intersections; no controlled-access highways",
+    "confidence": "medium",
+    "sources": [
+      "https://www.capitol.hawaii.gov/hrscurrent/Vol05_Ch0261-0319/HRS0291C/HRS_0291C-0134.HTM",
+      "https://www.hawaiicounty.gov/home/showpublisheddocument?id=52"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Idaho",
+    "abbr": "ID",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Golf carts generally off-highway; may use public roads only where local authority permits under Idaho Code 49-208; ITD cannot title/register them.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV/NEV: electric, FMVSS-compliant, titled, registered, insured, licensed driver; may not cross roads posted over 45 mph",
+    "stateHighways": "Crossing roads posted >45 mph not allowed",
+    "confidence": "medium",
+    "sources": [
+      "https://legislature.idaho.gov/statutesrules/idstat/title49/t49ch2/sect49-208/",
+      "https://afdc.energy.gov/laws/5824"
+    ],
+    "notes": "2008 OLR source said LSV limit 25 mph; newer AFDC summary says 35 - conflicting, verify."
+  },
+  {
+    "state": "Illinois",
+    "abbr": "IL",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Municipality may authorize golf carts by ordinance (625 ILCS 5/11-1426.1) after safety review; posted limit 35 mph or less; signs; licensed driver; equipment per ordinance.",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Neighborhood vehicle: 20-25 mph; local permissive ordinance required for local roads",
+    "stateHighways": "Cannot operate on state/federal highways; crossing of faster roads allowed (not state/federal highways)",
+    "confidence": "medium",
+    "sources": [
+      "https://www.ilga.gov/documents/legislation/ilcs/documents/062500050K11-1426.1.htm",
+      "https://www.iml.org/page.cfm?key=10420&parent=3820",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Indiana",
+    "abbr": "IN",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "City, county or town may permit by ordinance (IC 9-21-1-3.3); counties may allow safe right-angle crossings of state highways; licensed driver.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: electric, 35 mph max (2008 source); registration per LSV rules",
+    "stateHighways": "Right-angle crossing of state highways by county ordinance only",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/indiana/title-9/article-21/chapter-8/section-9-21-8-57/",
+      "https://law.justia.com/codes/indiana/title-9/article-21/chapter-1/section-9-21-1-3-3/",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Iowa",
+    "abbr": "IA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "City governing body may approve golf carts on city streets (Iowa Code 321.247): licensed driver, adequate brakes, slow-moving-vehicle sign and flag, sunrise to sunset, not registered; may cross but not travel on a city street that is a primary-road extension.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: FMVSS 500; registration",
+    "stateHighways": "Cannot travel on primary-road extensions; crossing allowed",
+    "confidence": "medium",
+    "sources": [
+      "https://www.legis.iowa.gov/docs/code/321.247.pdf",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Kansas",
+    "abbr": "KS",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Golf carts may operate on city streets posted 30 mph or less; may cross faster roads; not on interstate/federal/state highways except crossing.",
+    "golfCartMaxRoadMph": 30,
+    "lsvMaxRoadMph": 40,
+    "lsvRequirements": "LSV: <=40 mph roads, may cross faster roads; registration",
+    "stateHighways": "Not on state highways except crossing",
+    "confidence": "medium",
+    "sources": [
+      "https://ksrevisor.gov/statutes/chapters/ch08/008_015_0108.html",
+      "https://www.ksrevisor.gov/statutes/chapters/ch08/008_001_0026.html",
+      "https://kslegislature.gov/media/statute/008_000_0000_chapter/008_015_0000_article/008_015_0101_section/008_015_0101_k.pdf"
+    ],
+    "notes": "Work-site utility vehicles allowed to 45 mph streets; Kansas is the 40 mph LSV outlier."
+  },
+  {
+    "state": "Kentucky",
+    "abbr": "KY",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local government may authorize by ordinance (KRS 189.286, HB 154 of 2019): cart designed up to 35 mph, up to 6 people, lights/turn signals/mirrors/parking brake/seat belts/horn; posted limit 35 mph or less; no crossing roads >35 mph; sunrise-sunset; valid license; slow-moving emblem; permit/inspection.",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Registered LSV; FMVSS 500 (per OLR 2023: general authorization)",
+    "stateHighways": "Transportation Cabinet may prohibit use crossing state highways; no crossing roads >35 mph",
+    "confidence": "high",
+    "sources": [
+      "https://apps.legislature.ky.gov/law/acts/19RS/documents/0013.pdf",
+      "https://law.justia.com/codes/kentucky/chapter-189/section-189-286/"
+    ],
+    "notes": "Read from enrolled Act text. KY golf cart definition permits 35 mph top speed, unlike most states."
+  },
+  {
+    "state": "Louisiana",
+    "abbr": "LA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Only on parish roads/municipal streets designated and signed by the local government (R.S. 32:299.4): register with OMV as off-road vehicle with decal, licensed driver, insurance, equipment; local may prohibit.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "R.S. 32:300.1 LSV rules: FMVSS 500, registration, inspection",
+    "stateHighways": "Not on state highways; designated crossings only, permit from DOTD in some cases",
+    "confidence": "medium",
+    "sources": [
+      "https://codes.findlaw.com/la/revised-statutes/la-rev-stat-tit-32-sect-299-4/",
+      "https://law.justia.com/codes/louisiana/revised-statutes/title-32/rs-32-300-1/",
+      "https://www.ltrc.la.gov/pdf/2020/19-02TA-SA_printready.pdf"
+    ],
+    "notes": "Golf cart definition 25 mph (2020 review). Individual parishes/cities have their own ordinances."
+  },
+  {
+    "state": "Maine",
+    "abbr": "ME",
+    "golfCartOnRoads": "limited",
+    "golfCartConditions": "No general municipal golf-cart designation statute; golf carts need a special registration permit for limited highway use or may operate on qualifying islands if the municipality allows.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Federally compliant LSV, registered, Class A/B/C license; municipalities may prohibit/restrict (29-A 2089)",
+    "stateHighways": "Crossing at intersections; local may restrict",
+    "confidence": "medium",
+    "sources": [
+      "https://www.mainelegislature.org/legis/statutes/29-a/title29-Asec2089.html",
+      "https://legislature.maine.gov/statutes/29-A/title29-Asec102.html"
+    ],
+    "notes": "2020 review claimed local designation with 35 mph roads; the later search found no enacted statute for that. Conflict -> low for golf carts."
+  },
+  {
+    "state": "Maryland",
+    "abbr": "MD",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Unregistered golf cart only on county/municipal roads designated by the local government, posted 30 mph or less (35 at Golden Beach/Patuxent Knolls), dawn-to-dusk, lighting, keep far right, licensed driver (Transp. 21-104.2).",
+    "golfCartMaxRoadMph": 30,
+    "lsvMaxRoadMph": 30,
+    "lsvRequirements": "LSV: titled, registered with MVA, insured, licensed driver; roads <=30 mph; golf cart cannot be registered as LSV",
+    "stateHighways": "LSV: crossing up to 45 mph roads at controlled intersections (2008 source); no expressways",
+    "confidence": "medium",
+    "sources": [
+      "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gtr&section=21-104.2",
+      "https://mva.maryland.gov/your-mva-guide/businesses/bulletins-businesses/titling-and-registrations-golf-carts-atvs-utvs-and-road-vehicles",
+      "https://regs.maryland.gov/us/md/exec/comar/11.15.32.07"
+    ],
+    "notes": "Maryland LSV limit 30 mph is below the usual 35."
+  },
+  {
+    "state": "Massachusetts",
+    "abbr": "MA",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Golf carts may use a public way only to travel between parts of the same golf course; owner files liability policy/bond with RMV.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 30,
+    "lsvRequirements": "Federally certified LSV: registered, titled, insured, inspected, equipped; 30 mph roads or less",
+    "stateHighways": "Municipalities may prohibit on specific roads",
+    "confidence": "medium",
+    "sources": [
+      "https://www.mass.gov/info-details/low-speed-vehicles",
+      "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXIV/Chapter90/Section1F"
+    ],
+    "notes": "MA LSV limit 30 mph per Mass.gov summary."
+  },
+  {
+    "state": "Michigan",
+    "abbr": "MI",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Village/city/township resolution required (MCL 257.657a; townships can be disapproved by county board): driver 16+ and licensed, carts <=15 mph, roads posted 30 mph or less, may cross faster roads.",
+    "golfCartMaxRoadMph": 30,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV (MCL 257.25b): FMVSS 500, registered, VIN; must keep as far right as practicable",
+    "stateHighways": "State trunk lines: golf carts may cross; LSV state DOT may prohibit",
+    "confidence": "medium",
+    "sources": [
+      "https://www.legislature.mi.gov/documents/mcl/pdf/MCL-257-657A.pdf",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "LTRC 2020 listed 15/30 posted limits - consistent."
+  },
+  {
+    "state": "Minnesota",
+    "abbr": "MN",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Counties, cities, towns may permit on designated local roads (Minn. Stat. 169.045): permit-only, insurance, local ordinance conditions.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "No 'low-speed vehicle' in 169.011 (defines electric and medium-speed electric vehicle); 2008 source says LSV 35 mph; local may restrict",
+    "stateHighways": "Local roads only",
+    "confidence": "medium",
+    "sources": [
+      "https://www.revisor.mn.gov/statutes/cite/169.045",
+      "https://www.revisor.mn.gov/statutes/2025/cite/169.011",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "LSV rule is from 2008 source; treat as not fully verified."
+  },
+  {
+    "state": "Mississippi",
+    "abbr": "MS",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Municipality may authorize golf carts/LSVs on ordinance-designated public roads inside city limits (Miss. Code Title 63 Ch. 32): license, financial responsibility, city registration/decal; roads where bicycles are legal; golf cart <=20 mph.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "local option; roads where bicycles are legal (no numeric limit found)",
+    "lsvRequirements": "LSV >20 and <25 mph, 4 wheels; city decal/registration",
+    "stateHighways": "Not on non-interstate state/federal highways except crossing",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/mississippi/title-63/chapter-32/section-63-32-3/",
+      "https://law.justia.com/codes/mississippi/title-63/chapter-32/section-63-32-1/",
+      "https://law.justia.com/codes/mississippi/title-63/chapter-32/section-63-32-5/"
+    ],
+    "notes": "Municipality only (not unincorporated county)."
+  },
+  {
+    "state": "Missouri",
+    "abbr": "MO",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Municipalities may permit golf carts on their streets (RSMo 304.034); not on state/federal highways except crossing an intersecting municipal street; no crossing where highway limit exceeds 45 mph; cities set equipment/registration.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "RSMo 304.029: LSV on highways posted 35 mph or less; more stringent local rules allowed",
+    "stateHighways": "Cannot use state/federal highways except crossing (<=45 mph)",
+    "confidence": "medium",
+    "sources": [
+      "https://revisor.mo.gov/main/OneSection.aspx?section=304.029",
+      "https://revisor.mo.gov/main/OneSection.aspx?section=304.034"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Montana",
+    "abbr": "MT",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Public streets/highways only where the local governing body authorizes by ordinance (MCA 61-8-391); valid license; lights/horn/mirror.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "45 for medium-speed electric vehicle; LSV/golf cart with low-speed restricted license: 25 mph roads",
+    "lsvRequirements": "Medium-speed electric vehicle (MCA 61-8-377) or LSV; equipment per statute",
+    "stateHighways": "Medium-speed EV up to 45 mph roads; LSV may not cross roads >45 mph",
+    "confidence": "medium",
+    "sources": [
+      "https://mca.legmt.gov/bills/mca/title_0610/chapter_0080/part_0030/section_0910/0610-0080-0030-0910.html",
+      "https://mca.legmt.gov/bills/mca/title_0610/chapter_0080/part_0030/section_0770/0610-0080-0030-0770.html",
+      "https://mca.legmt.gov/bills/mca/title_0610/chapter_0080/part_0030/section_0780/0610-0080-0030-0780.html"
+    ],
+    "notes": "Montana outlier: up to 45 mph roads for medium-speed EVs."
+  },
+  {
+    "state": "Nebraska",
+    "abbr": "NE",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Only where city/village or county ordinance authorizes: sunrise-sunset, roads posted 35 mph or less, cart max 20 mph, Class O license, liability insurance (Neb. 60-6,381).",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV on highways 35 mph or less; Class O license; liability insurance (60-6,380)",
+    "stateHighways": "May cross higher-speed highways",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/nebraska/chapter-60/statute-60-6-380/",
+      "https://codes.findlaw.com/ne/chapter-60-motor-vehicles/ne-rev-st-sect-60-6-381/"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Nevada",
+    "abbr": "NV",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Golf carts only on public streets specifically approved by local government; Clark County permits may be required.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Registered LSV: 4 wheels, >20-25 mph, <3,000 lb, FMVSS 500; roads 35 mph or less (NRS 484B.637)",
+    "stateHighways": "May cross roads >35 mph at intersections",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/nevada/chapter-484b/statute-484b-637/",
+      "https://dmv.nv.gov/lowspeed.htm"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "New Hampshire",
+    "abbr": "NH",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "No standard golf-cart road authorization or local designation path found.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Compliant neighborhood electric vehicle: ways posted 35 mph or less; may cross higher-speed intersection",
+    "stateHighways": "NEV may cross at intersections",
+    "confidence": "medium",
+    "sources": [
+      "https://gencourt.state.nh.us/rsa/html/XXI/265/265-158.htm",
+      "https://cityrulelookup.com/states/new-hampshire/mobility/golf-carts-lsv"
+    ],
+    "notes": "CityRuleLookup is a secondary site."
+  },
+  {
+    "state": "New Jersey",
+    "abbr": "NJ",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Golf carts are not generally street legal; only qualifying electric LSVs (N.J.S.A. 39:4-31.1 et seq.).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 25,
+    "lsvRequirements": "Electric LSV, 20-25 mph, FMVSS 500; titled, registered, insured, plated; licensed driver; '25 MPH' decal; 26-35 mph roads require DOT/county/municipal authorization",
+    "stateHighways": "Crossing roads >35 mph only at signalized or approved intersections; municipalities may ban",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/new-jersey/title-39/section-39-4-31-1/",
+      "https://www.nj.gov/mvc/vehicletopics/lowspeed.htm"
+    ],
+    "notes": "NJ LSV 25 mph default - lower than most states."
+  },
+  {
+    "state": "New Mexico",
+    "abbr": "NM",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local authorities may regulate golf carts on their streets by ordinance (NMSA 66-7-9), but not state highways; must comply with 66-3-887.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Neighborhood electric car: streets posted 35 mph or less; registration, insurance, license (66-3-1103)",
+    "stateHighways": "Not on state highways (golf carts)",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/new-mexico/chapter-66/article-7/part-1/section-66-7-9/",
+      "https://law.justia.com/codes/new-mexico/chapter-66/article-3/part-12/section-66-3-1103/"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "New York",
+    "abbr": "NY",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Golf carts not street legal unless registered as an LSV (limited-use automobile on DMV approved list).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Manufacturer-certified top speed >20 to 25 mph; 49 CFR 571.500; registered; on DMV-approved limited-use list",
+    "stateHighways": "May cross faster roads at an intersection with a street 35 mph or less",
+    "confidence": "medium",
+    "sources": [
+      "https://dmv.ny.gov/registration/electric-scooters-and-bicycles-and-other-unregistered-vehicles",
+      "https://newyork.public.law/laws/n.y._vehicle_and_traffic_law_section_121-f"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "North Carolina",
+    "abbr": "NC",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Cities/counties may regulate golf carts by ordinance on public roads with speed limit 35 mph or less (G.S. 160A-300.6, 153A-245); cart <=20 mph; operator 16+; local registration/equipment/hours.",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: 4 wheels, electric or gas, >20 to <25 mph; roads posted 35 mph or less; FMVSS 500; registration/insurance (G.S. 20-121.1)",
+    "stateHighways": "NCDOT may prohibit on any road; LSV may cross >35 mph roads at intersections",
+    "confidence": "high",
+    "sources": [
+      "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/BySection/Chapter_20/GS_20-121.1.html",
+      "https://www.ncleg.net/enactedlegislation/sessionlaws/html/2009-2010/sl2009-459.html",
+      "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/ByChapter/Chapter_20.html"
+    ],
+    "notes": "Read from ncleg.gov statute text."
+  },
+  {
+    "state": "North Dakota",
+    "abbr": "ND",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "City ordinance may allow carts on city streets, daytime only, between owner's residence and a golf course; not federal/state/county highways except perpendicular crossing (N.D.C.C. 40-05-22; HB 1522 of 2025 may amend).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Chapter 39-29.1 LSV rules; 4 wheels, <=3,000 lb, 20-25 mph (2008)",
+    "stateHighways": "Crossing only perpendicular",
+    "confidence": "medium",
+    "sources": [
+      "https://www.lawserver.com/law/state/north-dakota/nd-code/north_dakota_code_40_05_22",
+      "https://ndlegis.gov/cencode/t39c29-1.html"
+    ],
+    "notes": "HB 1522 (2025) status not checked."
+  },
+  {
+    "state": "Ohio",
+    "abbr": "OH",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Under-speed vehicles (20 mph or less) allowed on 35 mph-or-less streets only where local authority authorizes by ordinance (R.C. 4511.214/.215): police inspection, title, registration.",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV (>20-25 mph) may use 35 mph-or-less streets without local ordinance",
+    "stateHighways": "Not specified",
+    "confidence": "medium",
+    "sources": [
+      "https://codes.ohio.gov/ohio-revised-code/section-4511.214",
+      "https://codes.ohio.gov/ohio-revised-code/section-4511.215"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Oklahoma",
+    "abbr": "OK",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Golf carts prohibited on public roads unless a city ordinance authorizes, or county commissioners approve roads posted 25 mph or less in unincorporated areas with signs (47 O.S. 11-1116).",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Low-speed electrical vehicles on roads posted 35 mph or less; cities may restrict (47 O.S. 11-805.1)",
+    "stateHighways": "LSV may cross higher-speed roads",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/oklahoma/title-47/section-47-11-1116/",
+      "https://law.justia.com/codes/oklahoma/title-47/section-47-11-805-1/"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Oregon",
+    "abbr": "OR",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Local road authority may allow by ordinance and posting (ORS 811.512 region); golf cart defined <=15 mph.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: >20-25 mph, roads 35 mph or less unless city/county permits higher",
+    "stateHighways": "City or county may allow higher-speed roads",
+    "confidence": "medium",
+    "sources": [
+      "https://oregon.public.law/statutes/ors_811.512",
+      "https://oregon.public.law/statutes/ors_801.295"
+    ],
+    "notes": "2020 review noted highways adjacent to golf courses."
+  },
+  {
+    "state": "Pennsylvania",
+    "abbr": "PA",
+    "golfCartOnRoads": "limited",
+    "golfCartConditions": "Golf carts may only cross highways directly (about 90 degrees) after stopping; locals can designate crossings (75 Pa.C.S. Ch. 77A).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 25,
+    "lsvRequirements": "NEV/LSV: FMVSS 500, '25 MPH Vehicle' decal; roads up to 25 mph; PennDOT/local may permit 26-35 mph (75 Pa.C.S. 3592-3593)",
+    "stateHighways": "Crossings only (golf carts)",
+    "confidence": "medium",
+    "sources": [
+      "https://www.palegis.us/statutes/consolidated/view-statute?chpt=77A&div=0&iFrame=true&ttl=75&txtType=HTM",
+      "https://www.legis.state.pa.us/WU01/LI/LI/CT/HTM/75/00.035.092.000..HTM"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Rhode Island",
+    "abbr": "RI",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Ordinary golf carts are not street legal; 2023 H 5457 created an LSV program.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Electric, 4 wheels, <3,000 lb, >20-25 mph, FMVSS 500; registered, insured, inspected; local ordinances",
+    "stateHighways": "Not specified",
+    "confidence": "medium",
+    "sources": [
+      "https://webserver.rilegislature.gov/PublicLaws/law23/law23207.htm",
+      "https://webserver.rilegislature.gov/Statutes/TITLE31/31-19.6/31-19.6-1.htm"
+    ],
+    "notes": "The 2008 source said LSVs were limited to Prudence Island at 25 mph; superseded by 2023 law."
+  },
+  {
+    "state": "South Carolina",
+    "abbr": "SC",
+    "golfCartOnRoads": "yes-statewide-conditions",
+    "golfCartConditions": "Per S.C. Code 56-2-90 (eff. May 22, 2025): registered/permitted and insured cart, driver 16+ with license, secondary highways/streets posted 35 mph or less, within 4 miles of registered address (or gated community entrance), daylight only; localities may set hours/routes/locations; children under 12 need seat belt.",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV (56-2-100): highways posted 35 mph or less; may cross higher-limit highways at intersections; FMVSS 500; local may prohibit",
+    "stateHighways": "Secondary highways only; crossing at intersections",
+    "confidence": "high",
+    "sources": [
+      "https://scdps.sc.gov/DrivinginSC/golf-cart-law",
+      "https://www.scstatehouse.gov/code/t56c002.php",
+      "https://www.scstatehouse.gov/billsearch.php?billnumbers=3292&session=126&summary=B"
+    ],
+    "notes": "2020 LTRC table and Justia text for old 56-2-105 were repealed; 56-2-90 statute text itself not read (SCDPS summary and bill title read)."
+  },
+  {
+    "state": "South Dakota",
+    "abbr": "SD",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "State/county highway where posted limit is 25 mph or less (2023 amendment); faster roads - only right-angle crossing unless municipal/township ordinance; municipal ordinance must require insurance, license, permit (SDCL 32-14-14).",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: title, registration, LSV plate, insurance, license; not where limit exceeds 35 mph (SDCL 32-3-71)",
+    "stateHighways": "Right-angle crossing of faster highways",
+    "confidence": "medium",
+    "sources": [
+      "https://mylrc.sdlegislature.gov/api/Documents/SessionLaw/250497.pdf?Year=2023",
+      "https://dor.sd.gov/individuals/motor-vehicle/low-speed-vehicles/"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Tennessee",
+    "abbr": "TN",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Traditional golf carts cannot be titled/registered for road use; modified to qualify as LSV/MSV they may be registered.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Class D license; 4 wheels, 20-25 mph; FMVSS; insurance; roads 35 mph or less; medium-speed vehicles separate (T.C.A. 55-8-191)",
+    "stateHighways": "LSV may cross higher-limit streets at intersections",
+    "confidence": "medium",
+    "sources": [
+      "https://law.justia.com/codes/tennessee/title-55/chapter-8/part-1/section-55-8-191/",
+      "https://tnclerks.zendesk.com/hc/en-us/articles/360000358886-Low-Medium-Speed-Vehicles"
+    ],
+    "notes": "The 2020 review said county roads for modified golf carts; local rules vary."
+  },
+  {
+    "state": "Texas",
+    "abbr": "TX",
+    "golfCartOnRoads": "limited",
+    "golfCartConditions": "Tex. Transp. Code 551.403: highways posted 35 mph or less, daylight only, within five miles of cart's usual parking place, and only to/from a golf course; also master-planned communities and vehicular beaches; counties, cities, TxDOT may prohibit; local authorization possible under 551.404 (not read).",
+    "golfCartMaxRoadMph": 35,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV per federal definition; roads posted 35 mph or less (2008 source); registration/insurance",
+    "stateHighways": "Crossing at intersections; TxDOT may prohibit",
+    "confidence": "medium",
+    "sources": [
+      "https://statutes.capitol.texas.gov/GetStatute.aspx?Code=TN&Value=551.403",
+      "https://statutes.capitol.texas.gov/docs/TN/htm/TN.551.htm",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Texas rules vary widely by city; 551.404 not read."
+  },
+  {
+    "state": "Utah",
+    "abbr": "UT",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "No golf-cart road authorization found; LSV excludes golf carts.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Titled, registered, insured, safety inspection; slow-moving-vehicle emblem; highways posted 35 mph or less (41-6a-1508)",
+    "stateHighways": "Highway authority may restrict",
+    "confidence": "medium",
+    "sources": [
+      "https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S1508.html",
+      "https://dmv.utah.gov/register/vehicles/low-speed/"
+    ],
+    "notes": "Utah has street-legal UTV/ATV law (41-6a-1509 etc.) that carts may or may not meet; not researched."
+  },
+  {
+    "state": "Vermont",
+    "abbr": "VT",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "No golf-cart-specific road law; a cart is a motor vehicle needing registration, inspection, license.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "NEV: electric, emission-free, <=4 passengers, <3,000 lb, FMVSS 500, 25 mph, roads posted 35 mph or less (23 V.S.A. 1043)",
+    "stateHighways": "Crossing signal-controlled roads up to 50 mph if both ends are authorized NEV roads; locals may prohibit",
+    "confidence": "medium",
+    "sources": [
+      "https://legislature.vermont.gov/statutes/section/23/013/01043",
+      "https://cityrulelookup.com/states/vermont/mobility/golf-carts-lsv"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Virginia",
+    "abbr": "VA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Governing body of county/city/town must designate highways by ordinance (Va. Code 46.2-916.1 et seq.): posted speed 25 mph or less; may cross signaled intersection if limit <=35 mph.",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "Electric LSV, 4 wheels, 20-25 mph; local may prohibit with signs (2008 source)",
+    "stateHighways": "Crossing allowed at traffic-light-controlled intersections on roads up to 35 mph",
+    "confidence": "high",
+    "sources": [
+      "https://law.lis.virginia.gov/vacodefull/title46.2/chapter8/article13.1/",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Golf-cart text read from the statute. LSV details from OLR 2008."
+  },
+  {
+    "state": "Washington",
+    "abbr": "WA",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "City or county may create golf-cart zones on streets/highways of 25 mph or less (RCW 46.08.175); cart is 4-wheeled, <=20 mph (RCW 46.04.1945).",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "NEV: generally highways 35 mph or less (RCW 46.61.725); local may regulate; MSV class 30-35 mph",
+    "stateHighways": "Not on listed state highways (NEV)",
+    "confidence": "medium",
+    "sources": [
+      "https://apps.leg.wa.gov/RCW/default.aspx?cite=46.08.175",
+      "https://apps.leg.wa.gov/rcw/default.aspx?cite=46.61.725"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "West Virginia",
+    "abbr": "WV",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Standard golf carts cannot legally operate on public roads; factory-built LSV only.",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": 25,
+    "lsvRequirements": "LSV on private roads and public streets within municipal limits posted 25 mph or less; municipalities may allow some 26-35 mph roads; will not register homemade golf carts as LSVs",
+    "stateHighways": "Not specified",
+    "confidence": "low",
+    "sources": [
+      "https://www.wvlegislature.gov/Bill_Text_HTML/2013_SESSIONS/RS/bills/sb123%20intr.pdf",
+      "https://www.cga.ct.gov/2008/rpt/2008-R-0479.htm"
+    ],
+    "notes": "Source is a bill text and older reports; verify current WV Code 17C/17A."
+  },
+  {
+    "state": "Wisconsin",
+    "abbr": "WI",
+    "golfCartOnRoads": "local-option",
+    "golfCartConditions": "Municipality may authorize golf carts on roads posted 25 mph or less (Wis. Stat. 349.18); can create crossings; not on state trunk/connecting highways except limited crossings; may allow trips to/from golf course up to one mile.",
+    "golfCartMaxRoadMph": 25,
+    "lsvMaxRoadMph": 35,
+    "lsvRequirements": "LSV: local roads 35 mph; municipalities may permit or prohibit (349.26); local-option state",
+    "stateHighways": "Not on state trunk highways except crossing",
+    "confidence": "medium",
+    "sources": [
+      "https://docs.legis.wisconsin.gov/document/statutes/349.18?view=section",
+      "https://docs.legis.wisconsin.gov/statutes/statutes/349/iii/25/1"
+    ],
+    "notes": ""
+  },
+  {
+    "state": "Wyoming",
+    "abbr": "WY",
+    "golfCartOnRoads": "no",
+    "golfCartConditions": "Statutory golf cart (<=15 mph) is for golf-course use or authorized special events only; otherwise must be a registered Multipurpose Vehicle (MPV).",
+    "golfCartMaxRoadMph": null,
+    "lsvMaxRoadMph": "not verified (no LSV statute found)",
+    "lsvRequirements": "MPV: titled, registered, insured, licensed driver; slow-moving emblem if <25 mph",
+    "stateHighways": "MPVs not on interstate highways",
+    "confidence": "low",
+    "sources": [
+      "https://dot.state.wy.us/files/live/sites/wydot/files/shared/Motor%20Vehicle%20Services/Multipurpose%20FAQ.pdf",
+      "https://law.justia.com/codes/wyoming/title-31/chapter-5/article-1/section-31-5-102/",
+      "https://www.cga.ct.gov/2023/rpt/pdf/2023-R-0242.pdf"
+    ],
+    "notes": "OLR 2023 found no LSV law in Wyoming."
+  }
+]
