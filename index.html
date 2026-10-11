@@ -115,6 +115,7 @@ body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
 #sheet .peek{padding:12px 14px 4px}
 #sheet .sbody{padding:0 14px 28px}
 }
+.tapmode{box-shadow:0 0 0 2px #0a7a3d33}
 </style>
 </head>
 <body>
@@ -148,10 +149,6 @@ body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
 
 <section class="card">
   <h2>Map & position</h2>
-  <div class="modes">
-    <button id="bStart">📍 Tap map: start</button>
-    <button id="bEnd">🏁 Tap map: end</button>
-  </div>
   <div class="chips">
     <button class="chip" id="flyHome">🏠 Home area</button>
     <button class="chip" data-fly="palm">Palm Bay</button>
@@ -1521,8 +1518,8 @@ if(mapOk){
 document.querySelectorAll('[data-fly]').forEach(function(b){b.addEventListener('click',function(){var c=PR.HOMES[b.dataset.fly];if(map)map.setView([c.lat,c.lon],13)})});
 $('switchMap').onclick=cycleMap;
 $('flyHome').onclick=function(){var v=homeView();if(map)map.setView([v[0],v[1]],v[2])};
-function hi(){$('bStart').classList.toggle('sel',mode==='start');$('bEnd').classList.toggle('sel',mode==='end')}
-$('bStart').onclick=function(){mode='start';hi()};$('bEnd').onclick=function(){mode='end';hi()};hi();
+function hi(){var a=$('aStart'),b=$('aEnd');if(a)a.classList.toggle('tapmode',mode==='start');if(b)b.classList.toggle('tapmode',mode==='end')}
+$('aStart').addEventListener('focus',function(){mode='start';hi()});$('aEnd').addEventListener('focus',function(){mode='end';hi()});hi();
 function saveTrip(){try{localStorage.setItem('cartroute.trip',JSON.stringify({s:pts.start,e:pts.end,sa:$('aStart').value,ea:$('aEnd').value}))}catch(x){}}
 function setPoint(which,ll,label){
   pts[which]=ll;saveTrip();if(!mapOk)return;
