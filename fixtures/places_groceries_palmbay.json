@@ -1,0 +1,298 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-06-01T08:52:28Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 9035477268,
+  "lat": 27.9868111,
+  "lon": -80.6490645,
+  "tags": {
+    "brand": "Circle K",
+    "brand:wikidata": "Q3268010",
+    "name": "Circle K",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 9021340132,
+  "lat": 27.9877988,
+  "lon": -80.6480410,
+  "tags": {
+    "name": "Bee Back Food Mart",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 10588076074,
+  "lat": 27.9810319,
+  "lon": -80.6230314,
+  "tags": {
+    "brand": "BP Shop",
+    "brand:wikidata": "Q152057",
+    "name": "BP Shop",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 7433919938,
+  "lat": 27.9813109,
+  "lon": -80.6217367,
+  "tags": {
+    "name": "Mr. K Food Store",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 4936930136,
+  "lat": 27.9992072,
+  "lon": -80.6327000,
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1185",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road Northeast",
+    "brand": "Mobil Mart",
+    "brand:wikidata": "Q109676002",
+    "name": "Mobil Mart",
+    "operator": "Mobil",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 4324956754,
+  "lat": 27.9979400,
+  "lon": -80.6283649,
+  "tags": {
+    "name": "Shell's Convenience and Food Mart",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 4934463706,
+  "lat": 27.9990479,
+  "lon": -80.6210212,
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "5995",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Babcock Street Northeast",
+    "ice_cream": "froyo",
+    "name": "RaceTrac Shop",
+    "operator": "RaceTrac",
+    "restaurant": "yes",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 5048662144,
+  "lat": 27.9979625,
+  "lon": -80.6199198,
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1326 #1",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road",
+    "name": "Fil-Am Oriental Store",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 974437766,
+  "center": {
+    "lat": 27.9679322,
+    "lon": -80.6480907
+  },
+  "tags": {
+    "brand": "Circle K",
+    "brand:wikidata": "Q3268010",
+    "building": "yes",
+    "name": "Circle K",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 767097658,
+  "center": {
+    "lat": 27.9981186,
+    "lon": -80.6491061
+  },
+  "tags": {
+    "branch": "Malabar Road",
+    "brand": "Wawa",
+    "brand:wikidata": "Q5936320",
+    "building": "yes",
+    "name": "Wawa",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 1344455333,
+  "center": {
+    "lat": 27.9966559,
+    "lon": -80.6418268
+  },
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:country": "US",
+    "addr:housenumber": "1040",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road Southeast",
+    "brand": "Walmart",
+    "brand:wikidata": "Q483551",
+    "building": "retail",
+    "internet_access": "wlan",
+    "name": "Walmart Supercenter",
+    "opening_hours": "Mo-Su 06:00-23:00",
+    "operator": "Walmart",
+    "payment:app:walmart": "yes",
+    "payment:apple_pay": "no",
+    "payment:google_pay": "no",
+    "payment:samsung_pay": "no",
+    "phone": "+1 321-723-2171",
+    "ref": "5455",
+    "ref:walmart": "5455",
+    "sensory_friendly:accommodation": "dimmed_light;static_screens;no_pa",
+    "sensory_friendly:conditional": "yes @ 08:00-10:00",
+    "shop": "supermarket",
+    "website": "https://www.walmart.com/store/5455-palm-bay-fl"
+  }
+},
+{
+  "type": "way",
+  "id": 583212070,
+  "center": {
+    "lat": 27.9981645,
+    "lon": -80.6479729
+  },
+  "tags": {
+    "brand": "Cumberland Farms",
+    "brand:wikidata": "Q1143685",
+    "building": "retail",
+    "name": "Cumberland Farms",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 387926633,
+  "center": {
+    "lat": 27.9968604,
+    "lon": -80.6362786
+  },
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1150",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road Southeast",
+    "addr:unit": "120",
+    "branch": "Shoppes of Palm Bay",
+    "brand": "Publix",
+    "brand:wikidata": "Q672170",
+    "building": "yes",
+    "name": "Publix",
+    "opening_hours": "Mo-Su 07:00-22:00",
+    "phone": "+1 321-727-3654",
+    "ref": "424",
+    "shop": "supermarket",
+    "website": "https://www.publix.com/locations/424"
+  }
+},
+{
+  "type": "way",
+  "id": 530897067,
+  "center": {
+    "lat": 27.9980268,
+    "lon": -80.6402322
+  },
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1090",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road Southeast",
+    "brand": "Marathon",
+    "brand:wikidata": "Q458363",
+    "building": "yes",
+    "name": "Marathon",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 503368604,
+  "center": {
+    "lat": 27.9978972,
+    "lon": -80.6318919
+  },
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1180",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Malabar Road Southeast",
+    "brand": "7-Eleven",
+    "brand:wikidata": "Q259340",
+    "building": "retail",
+    "contact:website": "https://www.7-eleven.com/locations/fl/palm-bay/1180-malabar-road-40354",
+    "name": "7-Eleven",
+    "opening_hours": "24/7",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 521040577,
+  "center": {
+    "lat": 27.9980013,
+    "lon": -80.6261275
+  },
+  "tags": {
+    "brand": "Sunoco",
+    "brand:wikidata": "Q1423218",
+    "building": "yes",
+    "name": "Sunoco",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "way",
+  "id": 697773151,
+  "center": {
+    "lat": 27.9992347,
+    "lon": -80.6241512
+  },
+  "tags": {
+    "addr:city": "Palm Bay",
+    "addr:housenumber": "1639",
+    "addr:postcode": "32907",
+    "addr:state": "FL",
+    "addr:street": "Georgia Street Northeast",
+    "building": "yes",
+    "name": "David Kita Produce",
+    "shop": "greengrocer"
+  }
+}
+
+  ]
+}

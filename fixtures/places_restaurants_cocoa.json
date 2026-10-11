@@ -1,0 +1,687 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-10T19:36:20Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 3567227235,
+  "lat": 28.3185898,
+  "lon": -80.6098980,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Heidi's"
+  }
+},
+{
+  "type": "node",
+  "id": 3567236690,
+  "lat": 28.3185865,
+  "lon": -80.6104058,
+  "tags": {
+    "amenity": "bar",
+    "name": "Casablanca"
+  }
+},
+{
+  "type": "node",
+  "id": 3567236691,
+  "lat": 28.3186111,
+  "lon": -80.6103226,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "24",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Orlando Avenue",
+    "air_conditioning": "yes",
+    "amenity": "restaurant",
+    "bar": "yes",
+    "contact:facebook": "https://facebook.com/people/koko-japanese-pub/61571474545209",
+    "contact:instagram": "kokopubcb",
+    "cuisine": "sushi;japanese",
+    "description": "Brevard County’s first and only Michelin recognized restaraunt.",
+    "email": "kokopubcb@gmail.com",
+    "name": "koko japanese pub",
+    "opening_hours": "Tu-Th 17:00-21:00; Fr 17:00-21:30; Sa 10:00-13:00,17:00-21:00; Su 10:00-13:00",
+    "reservation": "recommended",
+    "website": "https://www.kokopub.com/",
+    "website:menu": "https://www.kokopub.com/poke-cart"
+  }
+},
+{
+  "type": "node",
+  "id": 3567240528,
+  "lat": 28.3186508,
+  "lon": -80.6107285,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "caribbean",
+    "name": "The Tiny Turtle"
+  }
+},
+{
+  "type": "node",
+  "id": 3567250749,
+  "lat": 28.3189602,
+  "lon": -80.6102841,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "cuban",
+    "name": "Roberto's Little Havana",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3599307867,
+  "lat": 28.3213398,
+  "lon": -80.6104472,
+  "tags": {
+    "amenity": "pub",
+    "name": "Cocoa Beach Sports Pub",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3599658094,
+  "lat": 28.3207165,
+  "lon": -80.6113485,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "seafood",
+    "name": "Pompano Grill",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3608069159,
+  "lat": 28.3182325,
+  "lon": -80.6096104,
+  "tags": {
+    "amenity": "bar",
+    "name": "VFW 10148",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3608069162,
+  "lat": 28.3182089,
+  "lon": -80.6094655,
+  "tags": {
+    "amenity": "bar",
+    "name": "Minuteman Tavern",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 8590431866,
+  "lat": 28.3194409,
+  "lon": -80.6114920,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "20",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "Brevard Avenue N",
+    "air_conditioning": "yes",
+    "amenity": "restaurant",
+    "bar": "yes",
+    "cuisine": "sandwich;american;grill;wings;salad;caribbean",
+    "dog": "yes",
+    "name": "Salty Sisters Bar and Grill",
+    "opening_hours": "Mo-Th,Su 11:00-22:00; Fr-Sa 11:00-24:00",
+    "outdoor_seating": "yes",
+    "phone": "+1-321-613-2474",
+    "website": "https://SaltySistersCB.com"
+  }
+},
+{
+  "type": "node",
+  "id": 12372610601,
+  "lat": 28.3190080,
+  "lon": -80.6102258,
+  "tags": {
+    "addr:housenumber": "26",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Orlando Avenue",
+    "amenity": "restaurant",
+    "cuisine": "american;french",
+    "name": "Rebellion Beach Bar and Bistro",
+    "website": "https://rebellionrestaurants.com/rebellionbistro/"
+  }
+},
+{
+  "type": "node",
+  "id": 13991045363,
+  "lat": 28.3181989,
+  "lon": -80.6094750,
+  "tags": {
+    "addr:housenumber": "142",
+    "addr:street": "Minutemen Causeway",
+    "amenity": "bar",
+    "check_date": "2026-07-04",
+    "name": "Dirty Birds Tiki Bar & Grill",
+    "payment:cash": "yes",
+    "payment:credit_cards": "yes",
+    "payment:debit_cards": "yes",
+    "phone": "+1 321-613-2580",
+    "website": "https://www.dirtybirdstikibar.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 14051704603,
+  "lat": 28.3197287,
+  "lon": -80.6108542,
+  "tags": {
+    "addr:housenumber": "37",
+    "addr:postcode": "32931",
+    "addr:street": "North Brevard Avenue",
+    "amenity": "bar",
+    "check_date": "2026-07-26",
+    "check_date:opening_hours": "2026-07-26",
+    "contact:instagram": "boardroomcb",
+    "cuisine": "american;deli;fine_dining;grill;local;mediterranean",
+    "diet:vegetarian": "yes",
+    "name": "The Boardroom",
+    "opening_hours": "Su 10:00-14:00; Th 16:00-21:00; Fr-Sa 16:00-23:00",
+    "phone": "+13216134028",
+    "website": "https://boardroomcocoabeach.com",
+    "website:menu": "http://boardroomcocoabeach.com/s/order"
+  }
+},
+{
+  "type": "node",
+  "id": 2724411953,
+  "lat": 28.3250940,
+  "lon": -80.6101307,
+  "tags": {
+    "addr:housenumber": "366",
+    "addr:street": "North Orlando Avenue",
+    "amenity": "restaurant",
+    "contact:phone": "+1-321-783-8484",
+    "cuisine": "pizza",
+    "description": "BTC payment via Menufy.",
+    "name": "Bruno's Beachside Pizzeria",
+    "payment:bitcoincash": "yes",
+    "source": "http://www.coindesk.com/menufy-now-supports-bitcoin-payments-400-us-restaurants/",
+    "website": "https://cocoabeach-brunos-pizzeria.menufy.com"
+  }
+},
+{
+  "type": "node",
+  "id": 3579426405,
+  "lat": 28.3247870,
+  "lon": -80.6102702,
+  "tags": {
+    "amenity": "pub",
+    "name": "Surfers Sports Pub",
+    "smoking": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3596917841,
+  "lat": 28.3239323,
+  "lon": -80.6102219,
+  "tags": {
+    "addr:housenumber": "306",
+    "amenity": "restaurant",
+    "cuisine": "barbecue",
+    "delivery": "no",
+    "drive_through": "no",
+    "internet_access": "no",
+    "microbrewery": "no",
+    "name": "Slow & Low",
+    "opening_hours": "11:00-00:00",
+    "outdoor_seating": "yes",
+    "phone": "+1-321-783-6199",
+    "smoking": "outside",
+    "takeaway": "yes",
+    "website": "www.slowandlowbarbecue.com",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3597066891,
+  "lat": 28.3232901,
+  "lon": -80.6101629,
+  "tags": {
+    "amenity": "bar",
+    "name": "Sea Hag Saloon",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3597071194,
+  "lat": 28.3241212,
+  "lon": -80.6101683,
+  "tags": {
+    "amenity": "bar",
+    "name": "The North End",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3597071195,
+  "lat": 28.3232996,
+  "lon": -80.6103560,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "burger",
+    "name": "Burger Country",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 3599307869,
+  "lat": 28.3222796,
+  "lon": -80.6103131,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "seafood",
+    "delivery": "no",
+    "drive_through": "no",
+    "name": "Jazzy's Mainely Lobster",
+    "outdoor_seating": "yes",
+    "source:position": "Bing",
+    "takeaway": "yes",
+    "website": "https://jazzysmainelylobster.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 3599307880,
+  "lat": 28.3227659,
+  "lon": -80.6102487,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "british",
+    "delivery": "no",
+    "drive_through": "no",
+    "name": "Pig & Whistle",
+    "outdoor_seating": "yes",
+    "source:position": "Bing",
+    "takeaway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3567232103,
+  "lat": 28.3206989,
+  "lon": -80.6091346,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "italian",
+    "name": "Mango Tree"
+  }
+},
+{
+  "type": "node",
+  "id": 3567275786,
+  "lat": 28.3211888,
+  "lon": -80.6090598,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "american",
+    "name": "Pineapple Point",
+    "smoking": "outside"
+  }
+},
+{
+  "type": "node",
+  "id": 3599709415,
+  "lat": 28.3183033,
+  "lon": -80.6085683,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "7",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "Minutemen Causeway",
+    "amenity": "bar",
+    "name": "Hunkerdown Hideaway",
+    "outdoor_seating": "yes",
+    "smoking": "yes",
+    "source:position": "Bing",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3608069161,
+  "lat": 28.3183269,
+  "lon": -80.6086233,
+  "tags": {
+    "amenity": "bar",
+    "name": "Frozen Head"
+  }
+},
+{
+  "type": "node",
+  "id": 3608069164,
+  "lat": 28.3183222,
+  "lon": -80.6085040,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "seafood",
+    "drive_through": "no",
+    "name": "Fat Kahunas",
+    "outdoor_seating": "yes",
+    "source:position": "Bing",
+    "toilets:wheelchair": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3749958901,
+  "lat": 28.3177784,
+  "lon": -80.6091518,
+  "tags": {
+    "amenity": "bar",
+    "name": "Venice"
+  }
+},
+{
+  "type": "node",
+  "id": 13885681320,
+  "lat": 28.3177326,
+  "lon": -80.6091621,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "38",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "South Atlantic Avenue",
+    "amenity": "restaurant",
+    "contact:facebook": "https://www.facebook.com/profile.php?id=61586536500061",
+    "cuisine": "italian;pizza;pasta",
+    "description": "A Touch Of Basil Beach Side, founded in 2026, is a welcoming Italian restaurant located in Cocoa Beach, FL, & serving Cape Canaveral, Cocoa Beach, Merritt Island, North Merritt Island & Satellite Beach. Specializing in delivery, catering, dine-in & more.",
+    "email": "atouchofbasil@gmail.com",
+    "mobile": "+1 352-227-8152",
+    "name": "A Touch Of Basil Beach Side",
+    "opening_hours": "Su 11:00-20:00, Mo closed, Tu-Th 11:00-21:00, Fr-Sa 11:00-01:00",
+    "payment:american_express": "yes",
+    "payment:apple_pay": "yes",
+    "payment:credit_cards": "yes",
+    "payment:debit_cards": "yes",
+    "payment:discover_card": "yes",
+    "payment:mastercard": "yes",
+    "payment:samsung_pay": "yes",
+    "payment:visa": "yes",
+    "phone": "+1 321-613-0175",
+    "website": "http://atouchofbasil.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 3597066889,
+  "lat": 28.3263312,
+  "lon": -80.6090364,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "410",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "restaurant",
+    "cuisine": "american",
+    "name": "Whisk & Grind",
+    "opening_hours": "07:00-03:00",
+    "phone": "+1-321-784-8590",
+    "source:position": "Bing",
+    "website": "https://barrierjacks.com"
+  }
+},
+{
+  "type": "node",
+  "id": 477126718,
+  "lat": 28.3332890,
+  "lon": -80.6110250,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "1275",
+    "addr:postcode": "32931",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "restaurant",
+    "contact:phone": "+1 321-783-4545",
+    "contact:website": "https://siam-orchid.com",
+    "cuisine": "japanese",
+    "name": "Siam Orchid Japanese Restaraunt",
+    "opening_hours": "Mo-Fr 10:00-23:00",
+    "smoking": "outside",
+    "source:position": "Bing"
+  }
+},
+{
+  "type": "node",
+  "id": 2442057612,
+  "lat": 28.3319881,
+  "lon": -80.6111526,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "1245",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "restaurant",
+    "brand": "Denny's",
+    "brand:wikidata": "Q1189695",
+    "cuisine": "american",
+    "name": "Denny's",
+    "opening_hours": "24/7",
+    "phone": "+1 321-783-4005",
+    "website": "https://locations.dennys.com/fl/cocoa-beach/247952",
+    "website:menu": "https://dennys.com/#top-menu-section"
+  }
+},
+{
+  "type": "node",
+  "id": 3608069163,
+  "lat": 28.3335179,
+  "lon": -80.6110427,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "1275",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "pub",
+    "facebook": "https://www.facebook.com/jtssportsbarcocoabeach",
+    "name": "JT's Sports Bar",
+    "opening_hours": "Mo-Fr 12:00-02:00",
+    "phone": "+1-321-613-2231"
+  }
+},
+{
+  "type": "node",
+  "id": 7235652384,
+  "lat": 28.3317420,
+  "lon": -80.6101190,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:country": "US",
+    "addr:housenumber": "900",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "restaurant",
+    "name": "Gregory's Steak & Seafood Grille",
+    "opening_hours": "Mo-Su 17:00+",
+    "website": "https://www.gregorysonthebeach.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 3588597136,
+  "lat": 28.3441839,
+  "lon": -80.6110749,
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "2039",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Atlantic Avenue",
+    "amenity": "restaurant",
+    "cuisine": "seafood",
+    "delivery": "no",
+    "drive_through": "no",
+    "name": "Florida's Fresh Grill",
+    "opening_hours": "Mo-Su 16:30-21:30",
+    "outdoor_seating": "no",
+    "smoking": "no",
+    "website": "https://floridasfreshgrill.com/",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3592648988,
+  "lat": 28.3434237,
+  "lon": -80.6112143,
+  "tags": {
+    "amenity": "bar",
+    "name": "Paddy Cassidy's",
+    "smoking": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3579257694,
+  "lat": 28.3384662,
+  "lon": -80.6075504,
+  "tags": {
+    "amenity": "bar",
+    "internet_access": "wlan",
+    "name": "Longboards",
+    "operator": "Hilton"
+  }
+},
+{
+  "type": "way",
+  "id": 772956492,
+  "center": {
+    "lat": 28.3210908,
+    "lon": -80.6114452
+  },
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "140",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Brevard Avenue",
+    "amenity": "pub",
+    "building": "yes",
+    "darts": "yes",
+    "darts:type": "steel",
+    "live_music": "yes",
+    "name": "Johnathan's Pub",
+    "outdoor_seating": "yes",
+    "sport": "darts"
+  }
+},
+{
+  "type": "way",
+  "id": 772956343,
+  "center": {
+    "lat": 28.3253220,
+    "lon": -80.6102551
+  },
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "382",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "North Orlando Avenue",
+    "amenity": "restaurant",
+    "bar": "yes",
+    "building": "yes",
+    "cuisine": "american;breakfast;dessert",
+    "dog": "outside",
+    "drink:beer": "yes",
+    "drink:cocktail": "yes",
+    "drink:coffee": "yes",
+    "drink:soft_drink": "yes",
+    "drink:spirits": "yes",
+    "drink:wine": "yes",
+    "name": "4th Street Fillin Station",
+    "outdoor_seating": "yes",
+    "phone": "+1 321 613 2462",
+    "website": "https://4thstreetfillinstation.com/",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 772956596,
+  "center": {
+    "lat": 28.3276218,
+    "lon": -80.6104423
+  },
+  "tags": {
+    "amenity": "restaurant",
+    "building": "yes",
+    "cuisine": "pizza",
+    "name": "Anacapri Pizzeria"
+  }
+},
+{
+  "type": "way",
+  "id": 351933546,
+  "center": {
+    "lat": 28.3185504,
+    "lon": -80.6081573
+  },
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "1",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "Minutemen Causeway",
+    "amenity": "bar",
+    "building": "yes",
+    "name": "Beach Shack",
+    "outdoor_area": "yes",
+    "website": "http://www.beachshackblues.com/"
+  }
+},
+{
+  "type": "way",
+  "id": 351933547,
+  "center": {
+    "lat": 28.3182087,
+    "lon": -80.6082050
+  },
+  "tags": {
+    "addr:city": "Cocoa Beach",
+    "addr:housenumber": "2",
+    "addr:postcode": "32931",
+    "addr:state": "FL",
+    "addr:street": "Minutemen Causeway",
+    "amenity": "pub",
+    "building": "yes",
+    "name": "Coconuts on the Beach",
+    "name:1974-1975": "Fudd Puckers",
+    "name:1975-1985": "Thirsty Turtle",
+    "outdoor_area": "yes",
+    "website": "https://coconutsonthebeach.com/"
+  }
+}
+
+  ]
+}
