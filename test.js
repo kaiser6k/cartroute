@@ -520,6 +520,7 @@ for (const [name, file] of [['Palm Bay', 'fixtures/palmbay.json'], ['Cocoa Beach
     ok(!r.ok && r.items.length === 0 && r.errors === 2, 'all sources failing reported');
     require('./test-vehicles.js')(ok);
     require('./test-directions.js')(ok);
+    await require('./test-nav.js')(ok);
     if (globalThis.__cat) await globalThis.__cat();
     console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
   })();
