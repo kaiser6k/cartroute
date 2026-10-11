@@ -555,6 +555,9 @@ var GC = (function () {
     var limited = hw === 'motorway' || hw === 'motorway_link' || tags.motorroad === 'yes' || (hw === 'trunk' && tags.expressway === 'yes');
     if (limited && !(rules.motorway && (hw === 'motorway' || hw === 'motorway_link' || hw === 'trunk' || hw === 'trunk_link'))) { r.reason = (hw === 'motorway' || hw === 'motorway_link' ? 'motorway/freeway' : 'motorroad/expressway') + ': not allowed for this vehicle'; return r; }
     if (rules.roads.indexOf(hw) < 0) { r.reason = hw + ': not allowed for this vehicle'; return r; }
+    // e-scooter/e-bike: a street with a bike lane/track (cycleway=lane|track|shared_lane, also :left/:right/:both) is open up to 72 km/h (45 mph)
+    var lane = bike && ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both'].some(function (k) { return /^(lane|track|opposite_lane|opposite_track|shared_lane|share_busway)$/.test(tags[k] || ''); });
+    if (lane && r.kmh > rules.roadMaxKmh + 1e-9 && r.kmh <= 72.5) { r.allowed = true; r.basis = basis; r.bikeLane = true; return r; }
     if (rules.roadMaxKmh != null && r.kmh > rules.roadMaxKmh + 1e-9) {
       r.reason = r.speed + ' ' + (unit === 'kmh' ? 'km/h' : 'mph') + (basis === 'assumed' ? ' (assumed)' : '') + ' is above this vehicle\'s ' + (unit === 'kmh' ? Math.round(rules.roadMaxKmh) + ' km/h' : Math.round(rules.roadMaxKmh / 1.609344) + ' mph') + ' road limit';
       return r;
@@ -663,13 +666,19 @@ var GC = (function () {
     var cls = g.ways.map(function (w) { return classifyWay(w.tags, rules); });
     var blocked = new Set();
     var vehMw = rules.cls === 'veh' && rules.motorway;
-    g.ways.forEach(function (w) {
+    g.ways.forEach(function (w, wi) {
       var hw = w.tags.highway;
       if (vehMw) return; // vehicles that may use motorways/freeways can pass through their nodes
-      if (hw === 'motorway' || hw === 'motorway_link' || hw === 'trunk_link' || (hw === 'trunk' && (w.tags.expressway === 'yes'))) {
-        // never pass through nodes of limited-access roads
-        w.nodes.forEach(function (n) { blocked.add(n); });
-      }
+      var mainline = hw === 'motorway' || (hw === 'trunk' && w.tags.expressway === 'yes');
+      var ramp = hw === 'motorway_link' || hw === 'trunk_link';
+      // never pass through nodes of limited-access roads. A ramp's END node is where it meets an ordinary street: that node
+      // must stay usable by the street, otherwise every ramp terminal cuts the surface road in two (moped Rockledge->Cocoa bug).
+      if (mainline) w.nodes.forEach(function (n) { blocked.add(n); });
+      else if (ramp) w.nodes.forEach(function (n) {
+        var ws = g.nodeWays.get(n) || [];
+        var surface = ws.some(function (k) { var h2 = g.ways[k].tags.highway; return k !== wi && h2 !== 'motorway_link' && h2 !== 'trunk_link' && h2 !== 'motorway' && !(h2 === 'trunk' && g.ways[k].tags.expressway === 'yes'); });
+        if (!surface) blocked.add(n);
+      });
     });
     var adj = new Map();
     function add(a, b, wi, len, dir, ok) {
@@ -762,17 +771,65 @@ var GC = (function () {
     return { path: path, edges: edges };
   }
 
-  function snap(g, A, pt, maxM) {
-    var best = null, bd = Infinity;
+  // Largest strongly connected component of the allowed graph (nodes you can both enter and leave). Snapping to it avoids
+  // one-way stubs, exit-only service roads and tiny islands (Paris L6e Louvre -> Gare de Lyon bug). Iterative Tarjan.
+  function mainComponent(A) {
+    if (A._main) return A._main;
+    var index = new Map(), low = new Map(), on = new Set(), stack = [], best = null, counter = 0;
+    A.adj.forEach(function (_, root) {
+      if (index.has(root)) return;
+      var work = [[root, 0]];
+      index.set(root, counter); low.set(root, counter); counter++; stack.push(root); on.add(root);
+      while (work.length) {
+        var fr = work[work.length - 1], v = fr[0], es = A.adj.get(v) || [];
+        if (fr[1] < es.length) {
+          var w = es[fr[1]++].to;
+          if (!A.adj.has(w)) continue;
+          if (!index.has(w)) { index.set(w, counter); low.set(w, counter); counter++; stack.push(w); on.add(w); work.push([w, 0]); }
+          else if (on.has(w)) low.set(v, Math.min(low.get(v), index.get(w)));
+        } else {
+          work.pop();
+          if (work.length) { var u = work[work.length - 1][0]; low.set(u, Math.min(low.get(u), low.get(v))); }
+          if (low.get(v) === index.get(v)) {
+            var comp = new Set(), x;
+            do { x = stack.pop(); on.delete(x); comp.add(x); } while (x !== v);
+            if (!best || comp.size > best.size) best = comp;
+          }
+        }
+      }
+    });
+    A._main = best || new Set();
+    return A._main;
+  }
+
+  // Nearest node of the allowed graph. Prefers the main (strongly connected) component unless a node of it is
+  // much farther than the nearest island node; falls back to any allowed node.
+  function snap(g, A, pt, maxM, useMain) {
+    var main = useMain ? mainComponent(A) : null, best = null, bd = Infinity, bestAny = null, bdAny = Infinity;
     A.adj.forEach(function (es, id) {
       var p = g.nodes.get(id); if (!p) return;
       var dLat = (p[0] - pt[0]), dLon = (p[1] - pt[1]) * Math.cos(pt[0] * Math.PI / 180);
       var d2 = dLat * dLat + dLon * dLon;
-      if (d2 < bd) { bd = d2; best = id; }
+      if (d2 < bdAny) { bdAny = d2; bestAny = id; }
+      if (main && main.has(id) && d2 < bd) { bd = d2; best = id; }
     });
+    // use the main component only when it is not much farther than the plain nearest node
+    if (best === null || Math.sqrt(bd) - Math.sqrt(bdAny) > 150 / 111320) best = bestAny;
     if (best === null) return null;
     var d = hav(pt, g.nodes.get(best));
     return { id: best, dist: d, tooFar: maxM != null && d > maxM };
+  }
+  // Distance to the nearest road node of ANY class (used to say "your start is on a road your vehicle can't use").
+  function nearestAnyRoad(g, pt) {
+    var bd = Infinity, bn = null;
+    g.nodeWays.forEach(function (ws, id) {
+      var p = g.nodes.get(id); if (!p) return;
+      var dLat = (p[0] - pt[0]), dLon = (p[1] - pt[1]) * Math.cos(pt[0] * Math.PI / 180), d2 = dLat * dLat + dLon * dLon;
+      if (d2 < bd) { bd = d2; bn = id; }
+    });
+    if (bn === null) return null;
+    var ws = g.nodeWays.get(bn);
+    return { dist: hav(pt, g.nodes.get(bn)), way: g.ways[ws[0]] };
   }
 
   function nearestRoadName(g, id) {
@@ -830,13 +887,27 @@ var GC = (function () {
     var warnings = [];
     if (s && e && !s.tooFar && !e.tooFar) {
       var res = dijkstra(g, A, s.id, e.id, 1);
+      if (!res) {
+        // nearest node may be a one-way stub / exit-only road / tiny island: retry from the main connected network
+        var s2 = snap(g, A, start, 500, true), e2 = snap(g, A, end, 500, true);
+        if (s2 && e2 && !s2.tooFar && !e2.tooFar && (s2.id !== s.id || e2.id !== e.id)) {
+          var res2 = dijkstra(g, A, s2.id, e2.id, 1);
+          if (res2) { res = res2; s = s2; e = e2; result.snap = { start: s, end: e }; }
+        }
+      }
       if (res) {
         var d = describe(g, A, res, cartMph, status);
         d.ok = true; d.rules = rules; d.snap = result.snap;
         d.snapPoints = { start: g.nodes.get(s.id), end: g.nodes.get(e.id) };
         d.assumedMeters = d.segments.filter(function (x) { return x.basis !== 'tagged' && x.basis !== 'posted'; }).reduce(function (a, x) { return a + x.len; }, 0);
-        if (s.dist > 60) warnings.push('Start is ' + Math.round(s.dist) + ' m from the nearest legal road; route begins there.');
-        if (e.dist > 60) warnings.push('Destination is ' + Math.round(e.dist) + ' m from the nearest legal road; route ends there.');
+        [['Start', 'start', s, start], ['Destination', 'destination', e, end]].forEach(function (z) {
+          if (z[2].dist <= 60) return;
+          var any = nearestAnyRoad(g, z[3]), blockedRoad = any && any.dist + 30 < z[2].dist && any.dist < 60;
+          if (blockedRoad) {
+            var nm = any.way.tags.name || any.way.tags.ref || ('a ' + any.way.tags.highway + ' road');
+            warnings.push('Your ' + z[1] + ' is on ' + nm + ', a road your vehicle can\'t use; snapped to the nearest allowed road ' + Math.round(z[2].dist) + ' m away.');
+          } else warnings.push(z[0] + ' is ' + Math.round(z[2].dist) + ' m from the nearest legal road; route ' + (z[1] === 'start' ? 'begins' : 'ends') + ' there.');
+        });
         d.warnings = warnings;
         return d;
       }
@@ -876,6 +947,22 @@ var GC = (function () {
     return { span_km: span, tooBig: span > MAX_SPAN_KM,
       s: Math.min(a[0], b[0]) - dLat, w: Math.min(a[1], b[1]) - dLon, n: Math.max(a[0], b[0]) + dLat, e: Math.max(a[1], b[1]) + dLon };
   }
+  // Adaptive routing area: try small padding first, widen when no route is found, never past MAX_AREA_KM2.
+  var ROUTE_PADS = [700, 2000, 5000], MAX_AREA_KM2 = 450;
+  function bboxAreaKm2(bb) {
+    var h = (bb.n - bb.s) * 111.32, w = (bb.e - bb.w) * 111.32 * Math.cos(((bb.n + bb.s) / 2) * Math.PI / 180);
+    return h * w;
+  }
+  // next bbox to try after `tried` (index into ROUTE_PADS), or null when out of widenings / over the cap
+  function widerBbox(a, b, tried) {
+    for (var i = tried + 1; i < ROUTE_PADS.length; i++) {
+      var bb = bboxFor(a, b, ROUTE_PADS[i]);
+      if (bboxAreaKm2(bb) > MAX_AREA_KM2) return null;
+      bb.padIndex = i; bb.padM = ROUTE_PADS[i];
+      return bb;
+    }
+    return null;
+  }
   function overpassQuery(bb) {
     var box = [bb.s, bb.w, bb.n, bb.e].map(function (x) { return x.toFixed(5); }).join(',');
     return '[out:json][timeout:40];way["highway"]["highway"!~"^(footway|steps|pedestrian|corridor|elevator|bridleway|proposed|construction|platform|raceway)$"](' + box + ');(._;>;);out body qt;';
@@ -907,7 +994,7 @@ var GC = (function () {
     return out;
   }
 
-  return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, planRoute: planRoute,
+  return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, ROUTE_PADS: ROUTE_PADS, MAX_AREA_KM2: MAX_AREA_KM2, bboxAreaKm2: bboxAreaKm2, widerBbox: widerBbox, mainComponent: mainComponent, nearestAnyRoad: nearestAnyRoad, planRoute: planRoute,
     bboxFor: bboxFor, overpassQuery: overpassQuery, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
     MAX_SPAN_KM: MAX_SPAN_KM, viewportPlan: viewportPlan, classifyViewport: classifyViewport, LEGALITY_MIN_ZOOM: LEGALITY_MIN_ZOOM, isStateRoad: isStateRoad, lsvUpgradeFor: lsvUpgradeFor };
 })();
@@ -2348,17 +2435,26 @@ $('go').onclick=function(){
   var need=[];['start','end'].forEach(function(w){var inp=w==='start'?$('aStart'):$('aEnd');if(!pts[w]&&inp.value.trim())need.push(geocode(inp.value.trim()).then(function(r){setPoint(w,[+r.lat,+r.lon])}))});
   if(need.length){busy('Looking up addresses…');Promise.all(need).then(function(){busy('');$('go').click()}).catch(function(e){busy('');out.innerHTML='<div class="status bad">'+esc(e.message)+'</div>'});return}
   if(!pts.start||!pts.end){out.innerHTML='<div class="status bad">Set both a start and an end point on the map or by address.</div>';return}
-  var bb=GC.bboxFor(pts.start,pts.end,700);
+  var bb=GC.bboxFor(pts.start,pts.end,GC.ROUTE_PADS[0]);bb.padIndex=0;bb.padM=GC.ROUTE_PADS[0];
   if(bb.tooBig){out.innerHTML='<div class="status bad">Those points are '+bb.span_km.toFixed(1)+' km apart. This prototype is limited to '+GC.MAX_SPAN_KM+' km to keep map downloads fast.</div>';return}
   $('go').disabled=true;out.innerHTML='';
-  fetchRoads(bb).then(function(json){
-    busy('Planning route…');
-    return new Promise(function(r){setTimeout(r,20)}).then(function(){
-      var g=GC.parseOverpass(json);
-      var r=GC.planRoute(g,status,pts.start,pts.end,{cartMph:cartMph()});
-      show(r,g);
+  var startPt=pts.start,endPt=pts.end,widened=0;
+  function attempt(bb){
+    return fetchRoads(bb).then(function(json){
+      busy('Planning route…');
+      return new Promise(function(r){setTimeout(r,20)}).then(function(){
+        var g=GC.parseOverpass(json);
+        var r=GC.planRoute(g,status,startPt,endPt,{cartMph:cartMph()});
+        var wider=!r.ok&&r.error==='no-legal-route'?GC.widerBbox(startPt,endPt,bb.padIndex):null;
+        if(wider){widened=wider.padM;busy('No route in the small area, widening the map search to '+(wider.padM/1000).toFixed(1)+' km around the trip…');return attempt(wider)}
+        if(widened&&r.ok)r.warnings=(r.warnings||[]).concat(['The route needed a wider map area ('+(widened/1000).toFixed(1)+' km around your trip) because the direct area had no connection for your vehicle.']);
+        if(widened&&!r.ok)r.message=(r.message||'')+' I also searched a wider area ('+(bb.padM/1000).toFixed(1)+' km around the trip).';
+        show(r,g);
+      });
     });
-  }).catch(function(e){out.innerHTML='<div class="status bad"><b class="t">Couldn\'t load road data</b>'+esc(e.message)+'</div>'})
+  }
+  attempt(bb)
+  .catch(function(e){out.innerHTML='<div class="status bad"><b class="t">Couldn\'t load road data</b>'+esc(e.message)+'</div>'})
   .then(function(){$('go').disabled=false;busy('')});
 };
 function colorFor(s){return s.basis==='illegal'?{color:'#d12b2b',dashArray:'2 8',weight:6}:(s.basis==='tagged'||s.basis==='posted'||s.basis==='crossing')?{color:'#1f6fd1',weight:6}:{color:'#e08a00',dashArray:'10 8',weight:6}}
