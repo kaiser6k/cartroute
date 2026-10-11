@@ -342,6 +342,16 @@ var GC = (function () {
     return r;
   }
 
+  // ---------- LSV upgrade hint (display only; never changes which roads are routable) ----------
+  var LSV_RULES = { cls: 'lsv', limit: LSV_MAX_MPH, planning: true, allowCrossing: true, night: true };
+  // true only when the current cart is a regular golf cart (status.ok && rules.cls==='golf'),
+  // the road is NOT legal for it, but a registered street-legal LSV could use it.
+  function lsvUpgradeFor(status, tags) {
+    if (!status || !status.ok || !status.rules || status.rules.cls !== 'golf') return false;
+    if (classifyWay(tags, status.rules).allowed) return false;
+    return classifyWay(tags, LSV_RULES).allowed;
+  }
+
   // ---------- Geometry ----------
   function hav(a, b) {
     var R = 6371000, d2r = Math.PI / 180;
@@ -494,7 +504,7 @@ var GC = (function () {
     return g.ways[l[0]].tags.name || '';
   }
 
-  function describe(g, A, res, cartMph) {
+  function describe(g, A, res, cartMph, lsvStatus) {
     var coords = [], segs = [], crossings = [], dist = 0;
     var p0 = g.nodes.get(res.path[0]); coords.push(p0);
     var cur = null;
@@ -505,7 +515,7 @@ var GC = (function () {
       var legal = e.ok;
       var key = e.w + '|' + legal;
       if (!cur || cur.key !== key) {
-        cur = { key: key, way: e.w, name: c.name, hw: c.hw, speed: c.speed, basis: legal ? c.basis : 'illegal', legal: legal, reason: legal ? '' : c.reason, coords: [a], len: 0 };
+        cur = { key: key, way: e.w, name: c.name, hw: c.hw, speed: c.speed, basis: legal ? c.basis : 'illegal', legal: legal, reason: legal ? '' : c.reason, coords: [a], len: 0, lsvOnly: !legal && !!lsvStatus && lsvUpgradeFor(lsvStatus, g.ways[e.w].tags) };
         segs.push(cur);
       }
       cur.coords.push(b); cur.len += e.len;
@@ -544,7 +554,7 @@ var GC = (function () {
     if (s && e && !s.tooFar && !e.tooFar) {
       var res = dijkstra(g, A, s.id, e.id, 1);
       if (res) {
-        var d = describe(g, A, res, cartMph);
+        var d = describe(g, A, res, cartMph, status);
         d.ok = true; d.rules = rules; d.snap = result.snap;
         d.snapPoints = { start: g.nodes.get(s.id), end: g.nodes.get(e.id) };
         d.assumedMeters = d.segments.filter(function (x) { return x.basis !== 'tagged' && x.basis !== 'posted'; }).reduce(function (a, x) { return a + x.len; }, 0);
@@ -564,7 +574,9 @@ var GC = (function () {
     if (rs && re) {
       var alt = dijkstra(g, R, rs.id, re.id, 8);
       if (alt) {
-        var d2 = describe(g, R, alt, cartMph);
+        var d2 = describe(g, R, alt, cartMph, status);
+        d2.lsvUpgrade = d2.segments.some(function (x) { return x.lsvOnly; });
+        result.lsvUpgrade = d2.lsvUpgrade;
         var bad = {};
         d2.segments.forEach(function (x) { if (!x.legal) { var k = x.name + ' (' + x.speed + ' mph): ' + x.reason; bad[k] = (bad[k] || 0) + x.len; } });
         var list = Object.keys(bad).map(function (k) { return k + ', about ' + Math.round(bad[k]) + ' m'; });
@@ -612,14 +624,15 @@ var GC = (function () {
       w.nodes.forEach(function (n) { var p = g.nodes.get(n); if (p) coords.push(p); });
       if (coords.length < 2) return;
       var basis = c.allowed ? c.basis : 'illegal';
-      out.push({ coords: coords, name: c.name, speed: c.speed, basis: basis, reason: c.reason, allowed: c.allowed });
+      out.push({ coords: coords, name: c.name, speed: c.speed, basis: basis, reason: c.reason, allowed: c.allowed,
+        lsvOnly: !c.allowed && lsvUpgradeFor({ ok: true, rules: rules }, w.tags) });
     });
     return out;
   }
 
   return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, planRoute: planRoute,
     bboxFor: bboxFor, overpassQuery: overpassQuery, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
-    MAX_SPAN_KM: MAX_SPAN_KM, viewportPlan: viewportPlan, classifyViewport: classifyViewport, LEGALITY_MIN_ZOOM: LEGALITY_MIN_ZOOM, isStateRoad: isStateRoad };
+    MAX_SPAN_KM: MAX_SPAN_KM, viewportPlan: viewportPlan, classifyViewport: classifyViewport, LEGALITY_MIN_ZOOM: LEGALITY_MIN_ZOOM, isStateRoad: isStateRoad, lsvUpgradeFor: lsvUpgradeFor };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GC;
 
@@ -1674,10 +1687,11 @@ function show(r,g){
   function draw(d,alt){
     if(!mapOk)return;var all=[];
     d.segments.forEach(function(s){var st=colorFor(s);if(alt&&s.basis!=='illegal')st={color:'#7a8793',weight:5,dashArray:'6 6'};
-      L.polyline(s.coords,st).addTo(routeLayer).bindTooltip(s.name+(s.speed?' · '+s.speed+' mph':'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason:s.basis));all=all.concat(s.coords)});
+      L.polyline(s.coords,st).addTo(routeLayer).bindTooltip(s.name+(s.speed?' · '+s.speed+' mph':'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason+(s.lsvOnly?' · A registered street-legal LSV could use this road':''):s.basis));all=all.concat(s.coords)});
     d.crossings.forEach(function(c){L.marker(c.at,{icon:L.divIcon({className:'',html:'<div style="font-size:22px">⚠️</div>',iconSize:[24,24]})}).addTo(routeLayer).bindTooltip('Crossing '+c.road+(c.speed?' ('+c.speed+' mph'+(c.assumedSpeed?', assumed':'')+')':''))});
     if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[30,30]});
   }
+  function lsvCallout(){return'<div class="status ok" id="lsvCallout"><b class="t">To take this route you\'d need to make your cart road-legal (a street-legal LSV).</b>Titled, registered and plated as an LSV, insured (PIP and property damage liability), with headlights, tail/stop lights, turn signals, reflectors, mirror, windshield, parking brake, seat belts and a VIN. Top speed over 20 and up to 25 mph; roads posted 35 mph or less. Check with your county tax collector or FLHSMV for current requirements. <a href="https://www.flhsmv.gov/pdf/mv/lowspeedvehicles.pdf" target="_blank" rel="noopener">Florida steps to register an LSV (FLHSMV)</a> · <a href="https://www.flhsmv.gov/pdf/forms/86064.pdf" target="_blank" rel="noopener">Golf cart to LSV affidavit</a></div>'}
   if(r.ok){
     draw(r,false);
     var roads=[],last='';r.segments.forEach(function(s){if(s.name!==last){roads.push(s);last=s.name}});
@@ -1689,7 +1703,7 @@ function show(r,g){
     h+='<details><summary>Roads on this route ('+roads.length+')</summary><ol class="steps">'+roads.map(function(s){return'<li>'+esc(s.name)+(s.speed?' – '+s.speed+' mph'+(s.basis==='assumed'||s.basis==='posted-designation-assumed'?' (assumed legal)':''):'')+'</li>'}).join('')+'</ol></details>';
   }else{
     h+='<div class="status bad"><b class="t">No legal route</b>'+esc(r.message||'')+'</div>';
-    if(r.alternative){draw(r.alternative,true);h+='<p>The grey dashed/red dotted line shows the shortest path if the illegal road(s) were allowed. <b>Your cart may not use the red parts.</b> '+mi(r.alternative.distance_m)+'.</p>'}
+    if(r.alternative){draw(r.alternative,true);h+='<p>The grey dashed/red dotted line shows the shortest path if the illegal road(s) were allowed. <b>Your cart may not use the red parts.</b> '+mi(r.alternative.distance_m)+'.</p>';if(r.lsvUpgrade)h+=lsvCallout()}
   }
   h+='<p class="mut">Legality is simplified. Check local rules and signs before you go.</p>';
   out.innerHTML=h;
@@ -1827,7 +1841,7 @@ function render(json,st){
   clear();if(!layer)layer=L.layerGroup();if(!map.hasLayer(layer))layer.addTo(map);
   GC.classifyViewport(json,st.rules).forEach(function(s){
     var pl=L.polyline(s.coords,style(s)).addTo(layer);
-    pl.bindTooltip(s.name+(s.speed?' · '+s.speed+' mph':'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason:s.basis+' (likely legal; local rules may differ)'));
+    pl.bindTooltip(s.name+(s.speed?' · '+s.speed+' mph':'')+' · '+(s.basis==='illegal'?'NOT legal: '+s.reason+(s.lsvOnly?' · A registered street-legal LSV could use this road':''):s.basis+' (likely legal; local rules may differ)'));
     if(pl.bringToBack)pl.bringToBack();
   });
 }
