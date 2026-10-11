@@ -69,6 +69,13 @@ html,body{height:100%;overflow:hidden}
 .leg i{display:inline-block;width:22px;height:0;border-top:4px solid;vertical-align:middle;margin-right:4px}
 details summary{cursor:pointer;font-weight:600;padding:6px 0}
 ol.steps{padding-left:20px;margin:6px 0}
+.nextbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;margin:0 0 10px;padding:12px 14px;border-radius:12px;background:var(--pri);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.nextbar .ar{font-size:34px;line-height:1;min-width:40px;text-align:center}.nextbar .tx{font-size:17px;font-weight:700;line-height:1.25}.nextbar .sub{font-size:12px;font-weight:500;opacity:.9;margin-top:2px}
+.nextbar.off{background:#8a5a00}
+.dirs ol{list-style:none;margin:6px 0;padding:0}.dirs li{margin:0}
+.dirs button.stp{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 4px;color:inherit;font:inherit;cursor:pointer}
+.dirs button.stp:hover,.dirs button.stp.on{background:rgba(31,111,209,.12)}
+.dirs .ar{font-size:20px;min-width:26px;text-align:center}.dirs .dd{font-size:12px;color:var(--mut)}.dirs .dsum{font-size:13px;color:var(--mut);margin:2px 0 4px}
 
 .full{position:fixed;inset:0;background:var(--bg);overflow:auto;z-index:2000;display:none;padding:0 0 30px}
 .full.on{display:block}
@@ -203,6 +210,9 @@ body.sat .leaflet-marker-pane{filter:drop-shadow(0 0 2px #fff)}
 /*EUROPE*/
 /*VEH*/
 /*STATES*/
+</script>
+<script>
+/*DIR*/
 </script>
 <script>
 /*LIB*/
@@ -361,6 +371,7 @@ $('bFollow').onclick=function(){
     var id=navigator.geolocation.watchPosition(function(p){
       if(!acceptFix(p)){failed=true;stopFollow();return}
       showPos(p,first);
+      try{navUpdate([p.coords.latitude,p.coords.longitude])}catch(e){}
       if(first){geoMsg('Following you. Tap “Stop following” to turn tracking off.',true);first=false}
       if($('followReroute').checked&&pts.end&&!$('go').disabled&&Date.now()-lastReroute>15000){
         var moved=!pts.start||GC.hav(pts.start,[p.coords.latitude,p.coords.longitude])>40;
@@ -842,6 +853,48 @@ function checkOne(p){
   $('plRadius').onchange=function(){var a=ch.querySelector('.sel');if(a)placeSearch('cat',a.dataset.cat)};
 })();
 
+// ---------- Turn-by-turn directions ----------
+var navDirs=null,navRoute=null,navLayer=null,navIdx=-1,navSpoken=-1;
+function navReset(){navDirs=null;navRoute=null;navIdx=-1;navSpoken=-1;if(navLayer)navLayer.clearLayers()}
+function navSet(r,g){navRoute=r;navDirs=DIR.build(r,g);navIdx=-1}
+function navSpeak(t){try{if(window.speechSynthesis&&$('navVoice')&&$('navVoice').checked){window.speechSynthesis.cancel();window.speechSynthesis.speak(new SpeechSynthesisUtterance(t))}}catch(e){}}
+function dirsHtml(){
+  var st=navDirs.steps,u=ru(),h='<details class="dirs" id="dirDet"><summary>Turn-by-turn directions ('+(st.length-1)+' steps)</summary><div class="dsum">'+esc(DIR.fmtDist(navDirs.total_m,u))+' · '+esc(fmtTime(navRoute.time_s))+'</div><ol>';
+  st.forEach(function(s,i){var dt=DIR.detail(s,u);h+='<li><button type="button" class="stp" data-si="'+i+'"><span class="ar" aria-hidden="true">'+s.arrow+'</span><span><b>'+esc(s.text)+'</b>'+(dt?'<div class="dd">'+esc(dt)+'</div>':'')+'</span></button></li>'});
+  h+='</ol>';
+  if(window.speechSynthesis)h+='<label class="chk"><input type="checkbox" id="navVoice"> Speak directions while following (off by default)</label>';
+  return h+'</details>';
+}
+function navBind(){
+  if(!navDirs||!navDirs.steps.length)return;
+  var d=$('dirDet');if(d)d.querySelectorAll('button.stp').forEach(function(b){b.onclick=function(){navFocus(+b.dataset.si)}});
+  navUpdate(null);
+}
+function navFocus(i){
+  var s=navDirs&&navDirs.steps[i];if(!s)return;
+  [].forEach.call(document.querySelectorAll('#dirDet button.stp'),function(b){b.classList.toggle('on',+b.dataset.si===i)});
+  if(!mapOk)return;
+  if(!navLayer)navLayer=L.layerGroup().addTo(map);navLayer.clearLayers();
+  L.circleMarker(s.at,{radius:11,color:'#fff',weight:3,fillColor:'#1f6fd1',fillOpacity:1}).addTo(navLayer).bindTooltip(s.text,{permanent:false}).openTooltip();
+  map.setView(s.at,Math.max(map.getZoom(),17));
+}
+// pos = [lat,lon] of a live fix, or null for "from the start"
+function navUpdate(pos){
+  var el=$('navNext');if(!el||!navDirs||!navDirs.steps.length)return;
+  var u=ru(),P=pos?DIR.progress(navDirs,navRoute,pos):null,st=navDirs.steps,next,dist,cls='nextbar',sub='';
+  if(P){
+    next=P.next;dist=P.distToNext;
+    if(P.offRoute){cls='nextbar off';sub='You are '+DIR.fmtDist(P.off,u)+' off the planned route'}
+    else sub=DIR.fmtDist(P.remaining_m,u)+' left'+(P.remaining_s!=null?' · '+fmtTime(P.remaining_s):'');
+    if(P.stepIndex!==navIdx){navIdx=P.stepIndex;[].forEach.call(document.querySelectorAll('#dirDet button.stp'),function(b){b.classList.toggle('on',+b.dataset.si===P.stepIndex)})}
+    if(P.arrived)next=st[st.length-1];
+    if(!P.offRoute&&P.nextIndex!==navSpoken){navSpoken=P.nextIndex;navSpeak(P.arrived?'You have arrived':'In '+DIR.fmtDist(dist,u)+', '+next.text)}
+  }else{next=st[1]||st[0];dist=st[0].distance_m;sub=DIR.fmtDist(navDirs.total_m,u)+' · '+fmtTime(navRoute.time_s)}
+  el.className=cls;
+  el.innerHTML='<span class="ar" aria-hidden="true">'+next.arrow+'</span><div><div class="tx">'+esc(next.type==='arrive'&&P&&P.arrived?'You have arrived':(next.type==='arrive'?'Next: Arrive at your destination in '+DIR.fmtDist(dist,u):DIR.nextText(next,dist,u)))+'</div><div class="sub">'+esc(sub)+'</div></div>';
+}
+
+window.__cartNav={update:function(p){navUpdate(p)},coords:function(){return navRoute?navRoute.coords:null}};
 // ---------- Route ----------
 function fmtTime(s){var m=Math.round(s/60);return m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min'}
 function mi(m){return VEH.distLabel(m,ru())}
@@ -877,6 +930,7 @@ $('go').onclick=function(){
 function colorFor(s){return s.basis==='illegal'?{color:'#d12b2b',dashArray:'2 8',weight:6}:(s.basis==='tagged'||s.basis==='posted'||s.basis==='crossing')?{color:'#1f6fd1',weight:6}:{color:'#e08a00',dashArray:'10 8',weight:6}}
 function show(r,g){
   var out=$('result');if(routeLayer)routeLayer.clearLayers();
+  navReset();
   var h='';
   function draw(d,alt){
     if(!mapOk)return;var all=[];
@@ -892,12 +946,15 @@ function show(r,g){
     return'<div class="status ok" id="lsvCallout"><b class="t">To take this route you\'d need to make your cart road-legal (a street-legal LSV).</b>Titled, registered and plated as an LSV, insured (PIP and property damage liability), with headlights, tail/stop lights, turn signals, reflectors, mirror, windshield, parking brake, seat belts and a VIN. Top speed over 20 and up to 25 mph; roads posted '+lim+' mph or less. '+tail+'</div>'}
   if(r.ok){
     draw(r,false);
+    try{navSet(r,g)}catch(e){navDirs=null}
+    if(navDirs&&navDirs.steps.length)h+='<div class="nextbar" id="navNext" role="status" aria-live="polite"></div>';
     var roads=[],last='';r.segments.forEach(function(s){if(s.name!==last){roads.push(s);last=s.name}});
     h+='<div class="status ok"><span class="big">'+mi(r.distance_m)+' · '+fmtTime(r.time_s)+'</span><div class="mut">at '+VEH.speedToDisplay(cartMph(),ru())+' '+ulab(ru())+(status.cls==='golf'||status.cls==='lsv'?', plus ~20 s per crossing':' top speed, slower on slower roads')+'</div>'+
       '<div style="margin-top:6px">'+esc(status.label)+'</div></div>';
     if(r.assumedMeters>0)h+='<p class="warn">⚠ '+Math.round(100*r.assumedMeters/r.distance_m)+'% of this route ('+mi(r.assumedMeters)+', orange dashed) is <b>assumed</b> legal: the speed limit was missing in the map data'+(status.rules&&status.rules.cls==='veh'?'':' or, for golf carts, the local golf cart designation is unverified')+'. Look for posted signs.</p>';
     if(r.crossings.length){h+='<p><b>Crossings ('+r.crossings.length+')</b> – you cross roads your cart may not drive on:</p><ul>'+r.crossings.map(function(c){return'<li>'+esc(c.road)+(c.speed?' ('+c.speed+' '+ulab(ru())+(c.assumedSpeed?', assumed':'')+')':'')+(c.median?' – via median':'')+'</li>'}).join('')+'</ul>'+(status.cls==='golf'?'<p class="mut">Golf carts may only cross state highways at FDOT-approved crossings (s. 316.212(2)). Cross only where it is safe and legal.</p>':'')}
     (r.warnings||[]).forEach(function(w){h+='<p class="warn">'+esc(w)+'</p>'});
+    if(navDirs&&navDirs.steps.length)h+=dirsHtml();
     h+='<details><summary>Roads on this route ('+roads.length+')</summary><ol class="steps">'+roads.map(function(s){return'<li>'+esc(s.name)+(s.speed?' – '+s.speed+' '+ulab(ru())+(s.basis==='assumed'||s.basis==='posted-designation-assumed'?' (assumed legal)':''):'')+'</li>'}).join('')+'</ol></details>';
   }else{
     h+='<div class="status bad"><b class="t">No legal route</b>'+esc(r.message||'')+'</div>';
@@ -906,6 +963,7 @@ function show(r,g){
   h+=stateWarn(status)+euroWarn(status);
   h+='<p class="mut">Legality is simplified. Check local rules and signs before you go.</p>';
   out.innerHTML=h;
+  navBind();
   $('resCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
