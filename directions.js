@@ -150,21 +150,23 @@ var DIR = (function () {
   }
 
   // project p onto polyline; returns {along, off, seg}
-  function snapToRoute(coords, cum, p) {
+  function snapToRoute(coords, cum, p, minAlong) {
     var best = null, kx = Math.cos(p[0] * RAD) * 111320, ky = 110540;
     for (var i = 0; i < coords.length - 1; i++) {
+      if (minAlong && cum[i + 1] < minAlong - 1e-6) continue;   // never snap behind progress already made
       var ax = (coords[i][1] - p[1]) * kx, ay = (coords[i][0] - p[0]) * ky, bx = (coords[i + 1][1] - p[1]) * kx, by = (coords[i + 1][0] - p[0]) * ky;
       var dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, t = L2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
       var px = ax + t * dx, py = ay + t * dy, dist = Math.sqrt(px * px + py * py);
       if (!best || dist < best.off) best = { off: dist, seg: i, along: cum[i] + t * (cum[i + 1] - cum[i]), at: [coords[i][0] + (coords[i + 1][0] - coords[i][0]) * t, coords[i][1] + (coords[i + 1][1] - coords[i][1]) * t] };
     }
+    if (best && minAlong && best.along < minAlong) best.along = minAlong;
     return best;
   }
   var OFF_ROUTE_M = 60;
   // Progress of a live position along the route. dirs = build() result, route = planRoute result.
-  function progress(dirs, route, pos, speedMps) {
+  function progress(dirs, route, pos, speedMps, minAlong) {
     var st = dirs.steps; if (!st.length) return null;
-    var sn = snapToRoute(route.coords, dirs.cum, pos);
+    var sn = snapToRoute(route.coords, dirs.cum, pos, minAlong || 0);
     var cur = 0;
     for (var i = 0; i < st.length; i++) if (st[i].cum <= sn.along + 1e-6) cur = i;
     if (cur >= st.length - 1) cur = st.length - 1;
