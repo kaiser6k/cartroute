@@ -1006,7 +1006,42 @@ var GEO = (function () {
     var errors = 0, loads = 0;
     return { error: function () { errors++; return loads === 0 && errors >= threshold; }, load: function () { loads++; }, reset: function () { errors = 0; loads = 0; }, counts: function () { return { errors: errors, loads: loads }; } };
   }
-  return { PROVIDERS: PROVIDERS, PROVIDER_CHOICES: PROVIDER_CHOICES, cycleList: cycleList, basemapFor: basemapFor, tileChain: tileChain, createTileGuard: createTileGuard, US_BOXES: US_BOXES, inUS: inUS, OPTIONS: OPTIONS, kindOf: kindOf, message: message, outsideMessage: outsideMessage, imprecise: imprecise, envProblem: envProblem };
+  // ---- Address/place lookup helpers (pure; used by the app's geocoder) ----
+  // "local publix grocery store" -> ["publix grocery store", "publix"]: drop filler words, then generic trailing nouns, so a name search can match.
+  function queryVariants(q) {
+    q = String(q || '').replace(/\s+/g, ' ').trim();
+    var out = q ? [q] : [];
+    var s = q.replace(/^(?:the|a|my|local|nearby|nearest|closest|near me|a local|the nearest|the closest)\s+/i, '');
+    while (s !== q && /^(?:the|a|my|local|nearby|nearest|closest)\s+/i.test(s)) s = s.replace(/^(?:the|a|my|local|nearby|nearest|closest)\s+/i, '');
+    s = s.replace(/\s+near(?:by| me)$/i, '');
+    if (s && out.indexOf(s) < 0) out.push(s);
+    var t = s.replace(/\s+(?:grocery\s+store|grocery|supermarket|super\s+market|store|market|shop|location)$/i, '').trim();
+    if (t && out.indexOf(t) < 0) out.push(t);
+    return out;
+  }
+  function distKm(b, lat, lon) { var dy = (lat - b.lat) * 111.2, dx = (lon - b.lon) * 111.2 * Math.cos(b.lat * Math.PI / 180); return Math.sqrt(dx * dx + dy * dy); }
+  // A place-name search ("publix", no number, no comma) should be near the bias point, not the first match anywhere in the US.
+  function isPlaceName(q) { q = String(q || ''); return !houseNumber(q) && q.indexOf(',') < 0; }
+  // Order to try: a query with filler ("local publix grocery store") tries the cleanest core name first.
+  function orderedVariants(q) {
+    var v = queryVariants(q);
+    return v.length > 1 && /^(?:the|a|my|local|nearby|nearest|closest)\s/i.test(v[0]) ? v.slice(1).reverse().concat(v[0]) : v;
+  }
+  function houseNumber(q) { var m = String(q || '').trim().match(/^(\d+[a-z]?)\b/i); return m ? m[1].toLowerCase() : ''; }
+  // Pick the first usable Photon feature: inside the US, and, when the query starts with a house number, a result with that same number
+  // (otherwise Photon returns some other building on the street, which silently starts the route in the wrong place). Returns {lat,lon} or null.
+  function pickPhoton(features, q, bias, maxKm) {
+    var hn = houseNumber(q), best = null;
+    (features || []).some(function (x) {
+      var c = x.geometry && x.geometry.coordinates, p = x.properties || {};
+      if (!c || !inUS(c[1], c[0]) || (p.countrycode && p.countrycode !== 'US')) return false;
+      if (bias && maxKm && distKm(bias, c[1], c[0]) > maxKm) return false;
+      if (hn && String(p.housenumber || '').toLowerCase() !== hn) return false;
+      best = { lat: c[1], lon: c[0] }; return true;
+    });
+    return best;
+  }
+  return { distKm: distKm, isPlaceName: isPlaceName, orderedVariants: orderedVariants, queryVariants: queryVariants, houseNumber: houseNumber, pickPhoton: pickPhoton, PROVIDERS: PROVIDERS, PROVIDER_CHOICES: PROVIDER_CHOICES, cycleList: cycleList, basemapFor: basemapFor, tileChain: tileChain, createTileGuard: createTileGuard, US_BOXES: US_BOXES, inUS: inUS, OPTIONS: OPTIONS, kindOf: kindOf, message: message, outsideMessage: outsideMessage, imprecise: imprecise, envProblem: envProblem };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GEO;
 
@@ -1401,23 +1436,28 @@ function nominatim(q){
 }
 // Photon (CORS-friendly, no key, works from file://) first; Nominatim only as a fallback on real http(s) pages,
 // because it rejects requests that have no Referer (which file:// pages cannot send).
+function geoBias(){return pts&&pts.start?{lat:pts.start[0],lon:pts.start[1]}:(profile&&profile.home?{lat:profile.home.lat,lon:profile.home.lon}:null)}
 function photon(q){
-  var h=profile&&profile.home?'&lat='+profile.home.lat+'&lon='+profile.home.lon:'';
-  var url='https://photon.komoot.io/api/?lang=en&limit=5'+h+'&q='+encodeURIComponent(q);
-  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){
-    var f=(j.features||[]).filter(function(x){var c=x.geometry&&x.geometry.coordinates;return c&&GEO.inUS(c[1],c[0])&&(!x.properties||!x.properties.countrycode||x.properties.countrycode==='US')})[0];
-    return f?{lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0]}:null});
+  var bi=geoBias(),h=bi?'&lat='+bi.lat+'&lon='+bi.lon:'';
+  var url='https://photon.komoot.io/api/?lang=en&limit=10'+h+'&q='+encodeURIComponent(q);
+  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Photon '+r.status);return r.json()}).then(function(j){return GEO.pickPhoton(j.features,q,bi,GEO.isPlaceName(q)?60:0)});
 }
+function nominatimNear(q){
+  var bi=geoBias(),vb=bi?'&viewbox='+[bi.lon-0.5,bi.lat+0.5,bi.lon+0.5,bi.lat-0.5].join(','):'';
+  var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us'+vb+'&q='+encodeURIComponent(q);
+  return fetch(url,{headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error('Nominatim '+r.status);return r.json()}).then(function(a){return a.length?{lat:+a[0].lat,lon:+a[0].lon}:null});
+}
+// Try each cleaned-up wording on Photon, then (on real http(s) pages) Nominatim, which finds exact street addresses Photon lacks.
 function geocode(q){
   var wait=Math.max(0,lastGeo+1100-Date.now());lastGeo=Date.now()+wait;
   var NF='Address not found in the US. Try adding the city, or tap the map instead.';
   var NET='Address search could not be reached right now. Tap the map to choose your points instead.';
-  return new Promise(function(r){setTimeout(r,wait)}).then(function(){
-    return photon(q).catch(function(){
-      if(location.protocol==='file:')throw new Error(NET);
-      return nominatim(q).catch(function(){throw new Error(NET)});
-    });
-  }).then(function(r){if(!r)throw new Error(NF);return r});
+  var vs=GEO.orderedVariants(q),netErr=false;
+  function seq(list,fn){return list.reduce(function(p,v){return p.then(function(r){return r||fn(v).catch(function(){netErr=true;return null})})},Promise.resolve(null))}
+  return new Promise(function(r){setTimeout(r,wait)}).then(function(){return seq(vs,photon)}).then(function(r){
+    if(r||location.protocol==='file:')return r;
+    return seq(vs,nominatimNear)
+  }).then(function(r){if(!r)throw new Error(netErr?NET:NF);return r});
 }
 function homeFrag(h){var k=h?h.key:'';return'<div class="chips"><button class="chip homebtn" data-home="palm">Palm Bay</button><button class="chip homebtn" data-home="cocoa">Cocoa Beach</button></div>'+
  '<label>Or enter an address</label><div class="row"><input type="text" id="homeAddr" placeholder="street, city" style="flex:3" value="'+esc(k==='custom'?h.label:'')+'"><button id="homeFind" style="flex:1">Find</button></div>'+
