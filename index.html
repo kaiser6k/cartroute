@@ -1185,7 +1185,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = AC;
 (function(){
 'use strict';
 var $=function(id){return document.getElementById(id)};
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&','<':'<','>':'>','"':'"'}[c]})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'\u0026amp;','<':'\u0026lt;','>':'\u0026gt;','"':'\u0026quot;'}[c]})}
 var ls=null;try{ls=window.localStorage}catch(e){ls=null}
 var Store=PR.createStore(ls);
 var profile=Store.load();           // null => first run => wizard
