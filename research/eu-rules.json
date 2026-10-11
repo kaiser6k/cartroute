@@ -1,0 +1,520 @@
+[
+ {
+  "country": "Austria",
+  "code": "AT",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Belgium",
+  "code": "BE",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "16",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "Bulgaria",
+  "code": "BG",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Croatia",
+  "code": "HR",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Cyprus",
+  "code": "CY",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Czechia",
+  "code": "CZ",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Denmark",
+  "code": "DK",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Estonia",
+  "code": "EE",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Finland",
+  "code": "FI",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "15 (licence AM-121 or A1/A/B)",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://en.wikipedia.org/wiki/Quadricycle_(EU_vehicle_classification)"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site and Wikipedia; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "France",
+  "code": "FR",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "14 (licence AM/ASSR; those born before 1988 need none)",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/",
+   "https://en.wikipedia.org/wiki/Quadricycle_(EU_vehicle_classification)"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site and Wikipedia; national statute not read. Plates/insurance/road restrictions not verified. Wikipedia: L6e must be limited to 45 km/h, <=50cc petrol or <=4 kW electric."
+ },
+ {
+  "country": "Germany",
+  "code": "DE",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "15 with restriction (domestic only)",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "Greece",
+  "code": "GR",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Hungary",
+  "code": "HU",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Ireland",
+  "code": "IE",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Italy",
+  "code": "IT",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "14 with restrictions (domestic only for 14-15)",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "motorways banned (Wikipedia, secondary)",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/",
+   "http://www.patente.it/ecom.dll/noAjax?idc=3418",
+   "https://en.wikipedia.org/wiki/Quadricycle_(EU_vehicle_classification)"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site and Wikipedia; national statute not read. Plates/insurance/road restrictions not verified. Wikipedia says quadricycles are prohibited on motorways in Italy (secondary). Official circular (patente.it copy) confirms AM licence covers L6e up to 425 kg / L6e-B up to 6 kW."
+ },
+ {
+  "country": "Latvia",
+  "code": "LV",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Lithuania",
+  "code": "LT",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Luxembourg",
+  "code": "LU",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Malta",
+  "code": "MT",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Netherlands",
+  "code": "NL",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "16",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "Poland",
+  "code": "PL",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Portugal",
+  "code": "PT",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "16",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "Romania",
+  "code": "RO",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Slovakia",
+  "code": "SK",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Slovenia",
+  "code": "SI",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "Spain",
+  "code": "ES",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "15",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified."
+ },
+ {
+  "country": "Sweden",
+  "code": "SE",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://eur-lex.europa.eu/eli/reg/2013/168/2024-11-27/eng",
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true"
+  ],
+  "notes": "EU-level rules only; no national statute or authority page was read for this country. National minimum age, plates, insurance and road restrictions are not verified."
+ },
+ {
+  "country": "United Kingdom",
+  "code": "GB",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "L6e light quadricycle (<=45 km/h, <=425 kg unladen excl. batteries, 4 kW; L6e-B up to 6 kW); L7e heavy quadricycle for faster/heavier vehicles",
+  "maxSpeedKmh": 45,
+  "licence": "AM (EU Dir. 2006/126 art. 4) or higher categories",
+  "minAge": "16",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://www.legislation.gov.uk/eudr/2006/126/body/2018-05-22/data.xht?view=snippet&wrap=true",
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/",
+   "https://en.wikipedia.org/wiki/Quadricycle_(EU_vehicle_classification)"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site and Wikipedia; national statute not read. Plates/insurance/road restrictions not verified. Post-Brexit UK retains the EU-derived AM category; UK type-approval rules for quadricycles not verified. UK golf-cart-style vehicles: not verified."
+ },
+ {
+  "country": "Norway",
+  "code": "NO",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "not verified",
+  "maxSpeedKmh": null,
+  "licence": "not verified",
+  "minAge": "EU default 16; Member States may set 14-18 - national value not verified",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low (not found)",
+  "sources": [],
+  "notes": "Not an EU member; EEA. Nothing found/verified."
+ },
+ {
+  "country": "Switzerland",
+  "code": "CH",
+  "golfCartOnRoads": "generally no, unless type-approved/registered as a road vehicle (L-category) - not verified nationally",
+  "roadLegalCategory": "not verified",
+  "maxSpeedKmh": 45,
+  "licence": "special category F",
+  "minAge": "18 (special category F)",
+  "registrationInsurance": "type-approved vehicle, registration plate and liability insurance expected for road vehicles - national details not verified",
+  "roadRestrictions": "not verified; many states bar L6e from motorways/expressways",
+  "confidence": "low",
+  "sources": [
+   "https://tactac-gps.com/en/blog/age-voiture-sans-permis-europe/"
+  ],
+  "notes": "Age is from a secondary (non-government) comparison site; national statute not read. Plates/insurance/road restrictions not verified. Not EU; national rules."
+ }
+]
