@@ -99,6 +99,17 @@ textarea{width:100%;min-height:110px;font:13px monospace;border-radius:10px;bord
 #placeDetail{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;display:none}
 #placesBox>summary{cursor:pointer;font-size:17px;padding:2px 0}
 .err{color:var(--bad);font-size:14px;margin-top:6px}
+/* desktop/tablet: left sidebar (>=900px). Phone layout above is untouched. */
+@media (min-width:900px){
+#map{left:380px;width:auto}
+.leaflet-top{margin-top:0}.leaflet-bottom{margin-bottom:0}
+#topcard{left:0;right:auto;top:0;width:380px;max-width:none;margin:0;border-radius:0;border-width:0 1px 0 0;border-bottom:1px solid var(--line);padding:12px 14px 12px;box-shadow:none;z-index:1300}
+#topcard .brand{min-height:48px;margin-bottom:6px}#topcard .brand b{font-size:20px}
+#sheet{left:0;right:auto;top:var(--topH,178px);bottom:0;width:380px;max-width:none;margin:0;height:auto;max-height:none;border-radius:0;border-right:1px solid var(--line);box-shadow:4px 0 18px rgba(0,0,0,.18);transition:none;padding-bottom:0;z-index:1200}
+#sheet .grab,#peekSum{display:none}
+#sheet .peek{padding:12px 14px 4px}
+#sheet .sbody{padding:0 14px 28px}
+}
 </style>
 </head>
 <body>
