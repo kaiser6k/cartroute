@@ -65,6 +65,24 @@ module.exports = function (ok) {
   ok(VEH.unitFor('auto', EUR.get('FR')) === 'kmh' && VEH.unitFor('auto', EUR.get('GB')) === 'mph' && VEH.unitFor('auto', null) === 'mph' && VEH.unitFor('mph', EUR.get('FR')) === 'mph' && VEH.unitFor('kmh', null) === 'kmh', 'unit derived from region with override');
   ok(VEH.speedToDisplay(27.96, 'kmh') === 45 && Math.abs(VEH.speedFromDisplay(45, 'kmh') - 28) < 0.06 && VEH.speedToDisplay(19, 'mph') === 19, 'speed unit conversion round trip (45 km/h ~ 28 mph)');
   ok(VEH.distLabel(1609.344, 'mph') === '1.00 mi' && VEH.distLabel(2500, 'kmh') === '2.50 km' && VEH.toUnit(80, 'mph') === 50, 'distance labels and conversions');
+  // MPH/KPH preference applies to US golf cart / LSV rules, text, segments, directions and places too
+  ok(VEH.convertSpeedText('25 mph', 'kmh') === '40 km/h' && VEH.convertSpeedText('35 mph', 'kmh') === '56 km/h' && VEH.convertSpeedText('20 mph', 'kmh') === '32 km/h' && VEH.convertSpeedText('up to 25 mph.', 'mph') === 'up to 25 mph.', 'convertSpeedText: 25 mph = 40 km/h, 35 = 56, 20 = 32; mph left alone');
+  ok(VEH.convSpeed(25, 'mph', 'kmh') === 40 && VEH.convSpeed(40, 'kmh', 'mph') === 25 && VEH.convSpeed(30, 'mph', 'mph') === 30, 'convSpeed');
+  const GEQ = { type: 'golf', speed: 19, headlights: true, brakeLights: true, turnSignals: true, seatBelts: true, mirrors: true, windshield: true, reflectors: true };
+  const gM = GC.cartStatus(GEQ, { unit: 'mph' }), gK = GC.cartStatus(GEQ, { unit: 'kmh' });
+  ok(/25 mph/.test(gM.label) && gM.rules.unit === 'mph' && /40 km\/h/.test(gK.label) && !/mph/.test(gK.label) && gK.rules.unit === 'kmh', 'golf cart status label follows units: ' + gK.label);
+  ok(!/mph/.test(gK.explain.join(' ') + gK.warnings.join(' ')) , 'golf cart explain/warnings have no mph in km/h mode');
+  const lK = GC.cartStatus({ type: 'lsv', speed: 25, headlights: true, brakeLights: true, turnSignals: true, seatBelts: true, mirrors: true, windshield: true, reflectors: true, parkingBrake: true, hasVin: true, registered: true }, { unit: 'kmh' });
+  ok(/56 km\/h/.test(lK.label) && !/mph/.test(lK.checklist.map(c => c.item + (c.note || '')).join(' ')), 'LSV label and checklist in km/h: ' + lK.label);
+  const cwK = GC.classifyWay({ highway: 'primary', maxspeed: '45 mph' }, lK.rules), cwM = GC.classifyWay({ highway: 'primary', maxspeed: '45 mph' }, GC.cartStatus({ type: 'lsv', speed: 25, headlights: true, brakeLights: true, turnSignals: true, seatBelts: true, mirrors: true, windshield: true, reflectors: true, parkingBrake: true, hasVin: true, registered: true }, { unit: 'mph' }).rules);
+  ok(cwM.speed === 45 && /45 mph/.test(cwM.reason) && cwK.speed === 72 && /72 km\/h/.test(cwK.reason) && /56 km\/h/.test(cwK.reason) && cwK.allowed === cwM.allowed, 'segment speed and reason convert, legality unchanged: ' + cwK.reason);
+  ok(PR.normalize({ prefs: { units: 'mph' } }).prefs.units === 'mph' && PR.normalize({ prefs: { units: 'kmh' } }).prefs.units === 'kmh' && PR.normalize({}).prefs.units === 'auto', 'units pref persisted: auto / mph / kmh');
+  ok(PR.statusFor(GC, PR.normalize({ carts: [{ type: 'golf', speed: 19 }], prefs: { units: 'kmh' } }), null, null, null).unit === 'kmh' && PR.statusFor(GC, PR.normalize({ carts: [{ type: 'golf', speed: 19 }] }), null, null, null).unit === 'mph', 'statusFor: Auto in the US = mph, explicit kmh wins');
+  const PLx = require('./places.js'), DIRx = require('./directions.js');
+  ok(PLx.fmtDist(100, 'kmh') === '100 m' && PLx.fmtDist(2500, 'kmh') === '2.5 km' && PLx.fmtDist(1609.344) === '1.0 mi', 'places distance by unit');
+  ok(DIRx.fmtDist(3218.688, 'mph') === '2.0 mi' && DIRx.fmtDist(3218.688, 'kmh') === '3.2 km' && DIRx.fmtDist(100, 'mph') === '330 ft' && DIRx.fmtDist(100, 'kmh') === '100 m', 'turn-by-turn distance mi/ft vs km/m');
+  const NAVx = require('./nav.js');
+  ok(NAVx.speedNum(11.176, 'mph') === 25 && NAVx.speedNum(11.176, 'kmh') === 40 && NAVx.speedLabel(11.176, 'kmh') === '40 km/h', 'nav speed bubble mph/kmh');
   // profile: types, units pref, Europe points
   const pn = PR.normalize({ carts: [{ type: 'motorcycle', speed: 60 }, { type: 'bogus', speed: 10 }], prefs: { units: 'kmh' }, home: { lat: 48.86, lon: 2.35, label: 'Paris' } });
   ok(pn.carts[0].type === 'motorcycle' && pn.carts[1].type === 'golf' && pn.prefs.units === 'kmh' && pn.home && PR.normalize({ prefs: { units: 'x' } }).prefs.units === 'auto', 'profile keeps vehicle types, units pref, Europe home');

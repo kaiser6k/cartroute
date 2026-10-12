@@ -11,6 +11,19 @@ var GC = (function () {
   // Any other state: same conservative defaults, but the LSV road limit is the state's and an 'unverified' marker is attached.
   function cartStatus(p, opts) {
     opts = opts || {};
+    var o0 = cartStatusInner(p, opts);
+    // golf cart / LSV rules are written in mph: show them in km/h when the units setting asks for it
+    if (o0 && !(o0.rules && o0.rules.cls === 'veh')) {
+      var u0 = opts.unit === 'kmh' ? 'kmh' : 'mph', cv = function (t) { return VT.convertSpeedText(t, u0); };
+      if (o0.rules) o0.rules.unit = u0; o0.unit = u0;
+      if (u0 === 'kmh') {
+        o0.label = cv(o0.label); o0.explain = o0.explain.map(cv); o0.warnings = o0.warnings.map(cv);
+        o0.checklist.forEach(function (c) { c.item = cv(c.item); if (c.note) c.note = cv(c.note); });
+      }
+    }
+    return o0;
+  }
+  function cartStatusInner(p, opts) {
     // New vehicle types (moped, motorcycle, e-scooter, L6e) and anything in Europe use the shared vehicle table below. Florida golf cart/LSV logic is untouched.
     if (VT.isVehicle(p.type) || opts.region === 'EU') return vehicleStatus(p, opts);
     var st = opts.state || null;
@@ -212,7 +225,16 @@ var GC = (function () {
   function isTagYes(v) { return v === 'yes' || v === 'designated' || v === 'permissive'; }
 
   // returns {allowed, basis, speed, reason, crossable, name, hw}
+  // Golf cart / LSV rules compare in mph; when rules.unit is 'kmh' the reported speed and reason are shown in km/h.
   function classifyWay(tags, rules) {
+    var r = classifyWayCore(tags, rules);
+    if (rules && rules.cls !== 'veh' && rules.unit === 'kmh') {
+      if (r.speed != null) r.speed = Math.round(VT.mphToKmh(r.speed));
+      if (r.reason) r.reason = VT.convertSpeedText(r.reason, 'kmh');
+    }
+    return r;
+  }
+  function classifyWayCore(tags, rules) {
     tags = tags || {};
     if (rules && rules.cls === 'veh') return classifyVehicle(tags, rules);
     var hw = tags.highway;

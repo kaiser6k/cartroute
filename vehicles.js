@@ -47,7 +47,14 @@ var VEH = (function () {
   function speedToDisplay(mph, unit) { return unit === 'kmh' ? Math.round(mphToKmh(mph)) : Math.round(mph * 10) / 10; }
   function speedFromDisplay(v, unit) { v = Number(v); return unit === 'kmh' ? Math.round(kmhToMph(v) * 10) / 10 : v; }
   function distLabel(m, unit) { return unit === 'kmh' ? (m / 1000).toFixed(m < 10000 ? 2 : 1) + ' km' : (m / 1609.344).toFixed(m < 16093 ? 2 : 1) + ' mi'; }
-  return { KMH: KMH, TYPES: TYPES, ORDER: ORDER, get: get, isVehicle: isVehicle, isKnown: isKnown, maxMph: maxMph, rulesFor: rulesFor, unitFor: unitFor,
+  // Convert every "N mph" in a text to km/h when unit is 'kmh' (25 mph -> 40 km/h, 35 -> 56, 20 -> 32; rounded to a whole number). mph text is returned unchanged.
+  function convertSpeedText(t, unit) {
+    t = String(t == null ? '' : t); if (unit !== 'kmh') return t;
+    return t.replace(/(\d+(?:\.\d+)?)\s*mph\b/g, function (m, n) { return Math.round(mphToKmh(Number(n))) + ' km/h'; });
+  }
+  // number in one unit -> number in another ('mph'|'kmh'), whole numbers
+  function convSpeed(v, from, to) { v = Number(v); if (!isFinite(v) || from === to) return v; return to === 'kmh' ? Math.round(mphToKmh(v)) : Math.round(kmhToMph(v)); }
+  return { KMH: KMH, convertSpeedText: convertSpeedText, convSpeed: convSpeed, TYPES: TYPES, ORDER: ORDER, get: get, isVehicle: isVehicle, isKnown: isKnown, maxMph: maxMph, rulesFor: rulesFor, unitFor: unitFor,
     toUnit: toUnit, mphToKmh: mphToKmh, kmhToMph: kmhToMph, speedToDisplay: speedToDisplay, speedFromDisplay: speedFromDisplay, distLabel: distLabel };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = VEH;

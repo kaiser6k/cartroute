@@ -82,7 +82,10 @@ var PL = (function () {
     return places.map(function (p) { var q = {}; for (var k in p) q[k] = p[k]; q.distanceM = hav(origin, [p.lat, p.lon]); return q; })
       .sort(function (a, b) { return a.distanceM - b.distanceM; });
   }
-  function fmtDist(m) { var mi = m / 1609.344; return mi < 0.1 ? Math.round(m * 3.28084) + ' ft' : mi.toFixed(1) + ' mi'; }
+  function fmtDist(m, unit) {
+    if (unit === 'kmh') return m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1) + ' km';
+    var mi = m / 1609.344; return mi < 0.1 ? Math.round(m * 3.28084) + ' ft' : mi.toFixed(1) + ' mi';
+  }
 
   // ----- Photon text search -----
   function photonUrl(q, bias) {
@@ -105,12 +108,12 @@ var PL = (function () {
 
   // ----- reachability wording (routing result -> badge) -----
   var WALK_M = 150;
-  function reachability(res, place) {
+  function reachability(res, place, unit) {
     var snapEnd = res && res.snap && res.snap.end;
     if (res && res.error === 'cart-not-eligible') return { state: 'none', text: 'Your cart is not eligible yet (see cart status)' };
     if (res && res.ok) {
       var mi = res.distance_m / 1609.344, min = Math.max(1, Math.round(res.time_s / 60));
-      var trip = mi.toFixed(1) + ' mi, ~' + min + ' min';
+      var trip = (unit === 'kmh' ? (res.distance_m / 1000).toFixed(1) + ' km' : mi.toFixed(1) + ' mi') + ', ~' + min + ' min';
       var d = snapEnd ? snapEnd.dist : 0;
       if (d > WALK_M) return { state: 'walk', text: 'Legal route ends about ' + Math.round(d) + ' m from here; you may need to walk (' + trip + ')', walkM: d };
       var miss = (res.segments || []).filter(function (s) { return s.basis === 'assumed'; }).reduce(function (a, s) { return a + s.len; }, 0);
