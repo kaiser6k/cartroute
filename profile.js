@@ -21,7 +21,8 @@ var PR = (function () {
   function defaultCart(over) {
     var c = { id: genId(), nickname: '', make: '', type: 'golf', speed: 19,
       headlights: false, brakeLights: false, turnSignals: false, seatBelts: false, mirrors: false, windshield: false, reflectors: false,
-      parkingBrake: false, hasVin: false, registered: false };
+      parkingBrake: false, hasVin: false, registered: false,
+      heightM: VT.DIM_DEFAULTS.heightM, weightT: VT.DIM_DEFAULTS.weightT, lengthM: VT.DIM_DEFAULTS.lengthM, rangeKm: VT.EV_DEFAULTS.rangeKm, socPct: VT.EV_DEFAULTS.socPct };
     for (var k in over) c[k] = over[k];
     return c;
   }
@@ -38,7 +39,10 @@ var PR = (function () {
     var out = { id: d.id, nickname: str(c.nickname), make: str(c.make, 80), type: VT.isKnown(c.type) ? c.type : 'golf' };
     var sp = Number(c.speed);
     out.speed = isFinite(sp) && sp > 0 ? Math.min(Math.round(sp * 10) / 10, 99) : d.speed;
+    function num(v, d, lo, hi) { v = Number(v); return isFinite(v) && v >= lo && v <= hi ? Math.round(v * 100) / 100 : d; }
     EQUIP.forEach(function (k) { out[k] = c[k] === true || c[k] === 'true' || c[k] === 1; });
+    out.heightM = num(c.heightM, d.heightM, 0.5, 6); out.weightT = num(c.weightT, d.weightT, 0.1, 100); out.lengthM = num(c.lengthM, d.lengthM, 0.5, 40);
+    out.rangeKm = num(c.rangeKm, d.rangeKm, 5, 1500); out.socPct = num(c.socPct, d.socPct, 1, 100);
     return out;
   }
   function normHome(h) {
@@ -91,7 +95,9 @@ var PR = (function () {
     var sp = Number(c && c.speed);
     var mx = c && VT.isVehicle(c.type) ? VT.maxMph(c.type) : 60;
     if (!(sp > 0) || sp > mx) e.push(mx === 60 ? 'Top speed must be between 1 and 60 mph.' : 'Top speed must be between 1 and ' + Math.round(mx) + ' mph (' + Math.round(mx * 1.609344) + ' km/h).');
-    if (!c || !VT.isKnown(c.type)) e.push('Cart type must be golf cart, LSV, moped, motorcycle, e-scooter/e-bike or L6e quadricycle.');
+    if (!c || !VT.isKnown(c.type)) e.push('Vehicle type must be one of: ' + VT.ORDER.join(', ') + '.');
+    if (c && VT.isKnown(c.type) && VT.get(c.type).dims) { var h = Number(c.heightM), w = Number(c.weightT), l = Number(c.lengthM); if (!(h >= 0.5 && h <= 6)) e.push('Height must be between 0.5 and 6 m (1.6 to 19.7 ft).'); if (!(w >= 0.1 && w <= 100)) e.push('Weight must be between 0.1 and 100 tonnes.'); if (!(l >= 0.5 && l <= 40)) e.push('Length must be between 0.5 and 40 m (1.6 to 131 ft).'); }
+    if (c && VT.isKnown(c.type) && VT.get(c.type).ev) { var rk = Number(c.rangeKm), sc = Number(c.socPct); if (!(rk >= 5 && rk <= 1500)) e.push('Battery range must be between 5 and 1500 km (3 to 932 mi).'); if (!(sc >= 1 && sc <= 100)) e.push('Charge level must be between 1 and 100%.'); }
     return e;
   }
   function validate(p) {

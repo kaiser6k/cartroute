@@ -61,8 +61,27 @@ var GC = (function () {
       return out;
     }
     out.cls = p.type; out.ok = true;
-    out.rules = VT.rulesFor(p.type, region, speed, unit);
-    out.label = v.label.replace(/ \(.*$/, '') + ': ' + (v.roads.indexOf('motorway') >= 0 ? 'all roads, motorways/freeways allowed' : v.paths ? 'streets and bike paths, no motorways/freeways' : 'no motorways/freeways' + (out.rules.limit ? ', roads up to ' + out.rules.limit + ' ' + (unit === 'kmh' ? 'km/h' : 'mph') : ''));
+    out.rules = VT.rulesFor(p.type, region, speed, unit, p);
+    var SUMMARY = { car: 'all public roads and motorways, no sidewalks or bike paths', ev: 'all public roads and motorways, no sidewalks or bike paths', foot: 'footways, sidewalks and quiet streets, no motorways', bicycle: 'bike lanes, paths and streets, no motorways',
+      atv: 'quiet roads and tagged trails only, check local law' };
+    if (v.mode === 'truck') {
+      var tk = out.rules.truck;
+      if (!(tk.heightM > 0 && tk.weightT > 0 && tk.lengthM > 0)) { out.ok = false; out.rules = null; out.label = 'Enter your vehicle\'s height, weight and length'; out.explain.push('Height, weight and length are used to avoid roads with posted limits below your vehicle.'); return out; }
+      out.explain.push('Planning for ' + VT.lenLabel(tk.heightM, unit) + ' high, ' + VT.lenLabel(tk.lengthM, unit) + ' long, ' + VT.weightLabel(tk.weightT, unit) + '.');
+      out.warnings.push('Only limits mapped in OpenStreetMap (maxheight, maxweight, maxlength, hgv) are checked. Bridge and tunnel clearances, hazmat and turn radius are not. Obey posted signs.');
+    }
+    if (v.ev) {
+      var evr = out.rules.ev;
+      if (!(evr.ratedKm > 0)) { out.ok = false; out.rules = null; out.label = 'Enter your EV\'s battery range'; return out; }
+      out.explain.push('Usable range about ' + VT.kmLabel(evr.usableKm, unit) + ' (' + VT.kmLabel(evr.ratedKm, unit) + ' rated, ' + Math.round(Number(p.socPct) || 0) + '% charge, ' + Math.round((1 - VT.EV_SAFETY) * 100) + '% reserve for speed, weather and hills). After a charge to 80% about ' + VT.kmLabel(evr.fullKm, unit) + '.');
+    }
+    if (v.mode === 'atv') {
+      var q = region === 'EU' ? 'quad+ATV+road+legal+' + encodeURIComponent(co ? co.n : 'Europe') : 'ATV+UTV+street+legal+laws+' + encodeURIComponent(st ? st.n : 'state');
+      out.warnings.push('Check local law: whether an ATV/UTV may use public roads, and which ones, depends on ' + (region === 'EU' ? 'the country and local authority' : 'state, county and city law') + '. Roads shown are assumed, not verified.');
+      out.link = { href: 'https://www.google.com/search?q=' + q, text: 'Check ATV/UTV road laws' + (region === 'EU' ? (co ? ' in ' + co.n : '') : (st ? ' in ' + st.n : '')) };
+    }
+    if (v.mode === 'foot' || v.mode === 'bike') out.warnings.push('Footway and bike-path data is community-mapped in OpenStreetMap and can be missing. Use caution at crossings and obey signals.');
+    out.label = v.mode === 'truck' ? 'Truck / RV: motorways allowed, avoids roads below your height, weight and length' : SUMMARY[p.type] ? v.label.replace(/ \(.*$/, '') + ': ' + SUMMARY[p.type] : v.label.replace(/ \(.*$/, '') + ': ' + (v.roads.indexOf('motorway') >= 0 ? 'all roads, motorways/freeways allowed' : v.paths ? 'streets and bike paths, no motorways/freeways' : 'no motorways/freeways' + (out.rules.limit ? ', roads up to ' + out.rules.limit + ' ' + (unit === 'kmh' ? 'km/h' : 'mph') : ''));
     out.explain.push(v.note);
     if (region === 'US' && st && !st.v) out.explain.push('General rules for this vehicle type; ' + st.n + ' law may differ.');
     return out;
@@ -183,37 +202,104 @@ var GC = (function () {
     return n;
   }
   var NEVER = { footway: 1, pedestrian: 1, steps: 1, corridor: 1, bridleway: 1, elevator: 1, platform: 1, proposed: 1, construction: 1, raceway: 1, busway: 1, bus_guideway: 1, via_ferrata: 1 };
+  // OSM dimension tags -> metres / tonnes (null when absent or unparseable)
+  function parseLen(v) {
+    if (v == null) return null; v = String(v).trim().toLowerCase();
+    var m = v.match(/^(\d+)'\s*(?:(\d+(?:\.\d+)?)\s*(?:"|''))?$/); if (m) return (Number(m[1]) * 12 + Number(m[2] || 0)) * 0.0254;
+    m = v.match(/^(\d+(?:[.,]\d+)?)\s*(m|ft|feet)?$/); if (!m) return null;
+    var n = parseFloat(m[1].replace(',', '.')); return m[2] === 'ft' || m[2] === 'feet' ? n * 0.3048 : n;
+  }
+  function parseWeight(v) {
+    if (v == null) return null; v = String(v).trim().toLowerCase();
+    var m = v.match(/^(\d+(?:[.,]\d+)?)\s*(t|st|lbs?|kg)?$/); if (!m) return null;
+    var n = parseFloat(m[1].replace(',', '.')), u = m[2] || 't';
+    return u === 'st' ? n * 0.907185 : u === 'kg' ? n / 1000 : (u === 'lb' || u === 'lbs') ? n * 0.000453592 : n;
+  }
+  var NEVER_FOOT = { proposed: 1, construction: 1, raceway: 1, busway: 1, bus_guideway: 1, via_ferrata: 1, elevator: 1, platform: 1, bridleway: 1 };
+  var MAJOR = { primary: 1, primary_link: 1, secondary: 1, secondary_link: 1, trunk: 1, trunk_link: 1 };
+  function hasSidewalk(tags) { var s = tags.sidewalk; return (s && s !== 'no' && s !== 'none') || (tags['sidewalk:both'] && tags['sidewalk:both'] !== 'no') || (tags['sidewalk:left'] && tags['sidewalk:left'] !== 'no') || (tags['sidewalk:right'] && tags['sidewalk:right'] !== 'no') || tags.foot === 'yes' || tags.foot === 'designated'; }
   function classifyVehicle(tags, rules) {
-    var hw = tags.highway, region = rules.region, unit = rules.unit;
-    var r = { allowed: false, basis: '', speed: null, kmh: null, reason: '', crossable: false, name: tags.name || tags.ref || '(unnamed ' + hw + ')', hw: hw, drivable: false };
+    var hw = tags.highway, region = rules.region, unit = rules.unit, mode = rules.mode || '';
+    var r = { allowed: false, basis: '', speed: null, kmh: null, reason: '', crossable: false, name: tags.name || tags.ref || '(unnamed ' + hw + ')', hw: hw, drivable: false, pen: 1 };
     if (!hw) { r.reason = 'not a road'; return r; }
-    if (NEVER[hw]) { r.reason = hw === 'footway' || hw === 'pedestrian' || hw === 'steps' ? 'sidewalk/pedestrian way: never allowed' : hw + ': never allowed'; return r; }
+    var foot = mode === 'foot', bicycle = mode === 'bike', atv = mode === 'atv', truck = mode === 'truck';
+    if (foot ? NEVER_FOOT[hw] : NEVER[hw] && !(bicycle && (hw === 'footway' || hw === 'pedestrian') && (tags.bicycle === 'yes' || tags.bicycle === 'designated') && tags.footway !== 'sidewalk')) {
+      r.reason = hw === 'footway' || hw === 'pedestrian' || hw === 'steps' ? 'sidewalk/pedestrian way: never allowed' : hw + ': never allowed'; return r;
+    }
     var posted = parseKmh(tags.maxspeed, region), dflt = region === 'EU' ? DEFAULT_KMH_EU[hw] : (DEFAULT_MPH[hw] != null ? DEFAULT_MPH[hw] * 1.609344 : (hw === 'motorway_link' || hw === 'trunk_link' ? 45 * 1.609344 : null));
     r.kmh = posted != null ? posted : (dflt != null ? dflt : (region === 'EU' ? 50 : 40));
-    r.speed = unit === 'kmh' ? Math.round(r.kmh) : Math.round(r.kmh / 1.609344);
-    var basis = posted != null ? 'posted' : 'assumed', bike = rules.veh === 'escooter';
-    var priv = tags.access === 'private' || tags.access === 'no' || (bike ? tags.bicycle === 'no' : (tags.motor_vehicle === 'no' || tags.motor_vehicle === 'private'));
+    function setSpeed() { r.speed = unit === 'kmh' ? Math.round(r.kmh) : Math.round(r.kmh / 1.609344); }
+    setSpeed();
+    var basis = posted != null ? 'posted' : 'assumed', bike = rules.veh === 'escooter' || bicycle;
     var svc = tags.service === 'driveway' || tags.service === 'parking_aisle' || tags.service === 'drive-through';
+    var limited = hw === 'motorway' || hw === 'motorway_link' || tags.motorroad === 'yes' || (hw === 'trunk' && tags.expressway === 'yes');
+    var accNo = tags.access === 'private' || tags.access === 'no';
+
+    // ---------- pedestrians ----------
+    if (foot) {
+      var fpriv = (accNo && tags.foot !== 'yes' && tags.foot !== 'designated' && tags.foot !== 'permissive') || tags.foot === 'no' || tags.foot === 'private';
+      r.drivable = !fpriv;
+      if (fpriv) { r.reason = 'private/no pedestrian access'; return r; }
+      if (hw === 'motorway' || hw === 'motorway_link' || tags.motorroad === 'yes' || (hw === 'trunk' && tags.expressway === 'yes')) { r.reason = 'motorway/expressway: no pedestrians'; r.drivable = false; return r; }
+      r.speed = null;
+      if (hw === 'footway' || hw === 'pedestrian' || hw === 'corridor') { r.allowed = true; r.basis = 'tagged'; r.pen = 0.9; return r; }
+      if (hw === 'steps') { r.allowed = true; r.basis = 'tagged'; r.pen = 3; r.steps = true; return r; }
+      if (hw === 'path' || hw === 'cycleway' || hw === 'track') { r.allowed = true; r.basis = tags.foot === 'yes' || tags.foot === 'designated' || hw === 'path' ? 'tagged' : 'assumed'; r.pen = 1; return r; }
+      if (rules.roads.indexOf(hw) < 0) { r.reason = hw + ': not a walking route'; return r; }
+      var sw = hasSidewalk(tags);
+      if (!sw && MAJOR[hw]) { r.reason = 'major road with no mapped sidewalk'; return r; }
+      setSpeed();
+      r.allowed = true; r.basis = sw ? 'tagged' : 'assumed'; r.pen = sw ? 1 : 1.6; return r;
+    }
+
+    // ---------- access tags for the other modes ----------
+    var priv;
+    if (bike) priv = accNo || tags.bicycle === 'no';
+    else if (atv) { var aYes = tags.atv === 'yes' || tags.atv === 'designated' || tags.atv === 'permissive'; priv = tags.atv === 'no' || accNo || (!aYes && (tags.motor_vehicle === 'no' || tags.motor_vehicle === 'private')); }
+    else priv = accNo || tags.motor_vehicle === 'no' || tags.motor_vehicle === 'private';
+    if (truck && (tags.hgv === 'no' || tags.hgv === 'destination' || tags.hgv === 'delivery')) {
+      r.drivable = !(tags.motor_vehicle === 'no' || accNo); r.reason = tags.hgv === 'no' ? 'hgv=no: no trucks' : 'hgv=' + tags.hgv + ': trucks not allowed to pass through'; return r;
+    }
     if (PATHLIKE[hw]) {
       var bk = tags.bicycle, okb = bk === 'yes' || bk === 'designated' || bk === 'permissive';
-      if (rules.paths && !priv && (hw === 'cycleway' ? bk !== 'no' : okb)) { r.allowed = true; r.basis = 'path'; r.drivable = true; r.kmh = Math.min(r.kmh, 25); r.speed = unit === 'kmh' ? Math.round(r.kmh) : Math.round(r.kmh / 1.609344); return r; }
+      if (atv) {
+        var mv = tags.motor_vehicle, ay = tags.atv === 'yes' || tags.atv === 'designated' || tags.atv === 'permissive' || mv === 'yes' || mv === 'designated' || mv === 'permissive';
+        if (rules.tracks && (hw === 'track' || hw === 'path') && !priv && ay) { r.allowed = true; r.basis = 'tagged'; r.drivable = true; r.pen = 1.5; r.kmh = Math.min(r.kmh, 40); r.speed = null; return r; }
+        r.reason = hw + ': not tagged for ATVs or motor vehicles (atv=yes / motor_vehicle=yes)'; return r;
+      }
+      if (bicycle && !priv && (hw === 'cycleway' ? bk !== 'no' : (hw === 'track' ? true : okb))) {
+        r.allowed = true; r.basis = hw === 'cycleway' || okb ? 'path' : 'assumed'; r.drivable = true; r.kmh = Math.min(r.kmh, 25); r.pen = hw === 'track' && !okb ? 1.3 : 0.8; r.speed = null; return r;
+      }
+      if (rules.paths && !bicycle && !priv && (hw === 'cycleway' ? bk !== 'no' : okb)) { r.allowed = true; r.basis = 'path'; r.drivable = true; r.kmh = Math.min(r.kmh, 25); setSpeed(); return r; }
       r.reason = hw + (rules.paths ? ' not open to bikes/scooters (no bicycle=yes/designated)' : ': not a road for this vehicle');
       return r;
     }
+    if (bicycle && (hw === 'footway' || hw === 'pedestrian')) { r.allowed = true; r.basis = 'path'; r.drivable = true; r.kmh = Math.min(r.kmh, 12); r.pen = 1.2; r.speed = null; return r; }
     r.drivable = !(priv || svc);
     if (priv) { r.reason = 'private/no access for this vehicle'; return r; }
     if (svc) { r.reason = 'driveway/parking aisle'; return r; }
-    var limited = hw === 'motorway' || hw === 'motorway_link' || tags.motorroad === 'yes' || (hw === 'trunk' && tags.expressway === 'yes');
     if (limited && !(rules.motorway && (hw === 'motorway' || hw === 'motorway_link' || hw === 'trunk' || hw === 'trunk_link'))) { r.reason = (hw === 'motorway' || hw === 'motorway_link' ? 'motorway/freeway' : 'motorroad/expressway') + ': not allowed for this vehicle'; return r; }
     if (rules.roads.indexOf(hw) < 0) { r.reason = hw + ': not allowed for this vehicle'; return r; }
+    // trucks and RVs: honor mapped height / weight / length limits
+    if (truck && rules.truck) {
+      var T = rules.truck, lim;
+      lim = parseLen(tags.maxheight); if (lim != null && T.heightM > 0 && lim < T.heightM - 1e-9) { r.reason = 'height limit ' + VT.lenLabel(lim, unit) + ' (your vehicle ' + VT.lenLabel(T.heightM, unit) + ')'; return r; }
+      lim = parseWeight(tags['maxweight:hgv'] != null ? tags['maxweight:hgv'] : tags.maxweight); if (lim != null && T.weightT > 0 && lim < T.weightT - 1e-9) { r.reason = 'weight limit ' + VT.weightLabel(lim, unit) + ' (your vehicle ' + VT.weightLabel(T.weightT, unit) + ')'; return r; }
+      lim = parseLen(tags['maxlength:hgv'] != null ? tags['maxlength:hgv'] : tags.maxlength); if (lim != null && T.lengthM > 0 && lim < T.lengthM - 1e-9) { r.reason = 'length limit ' + VT.lenLabel(lim, unit) + ' (your vehicle ' + VT.lenLabel(T.lengthM, unit) + ')'; return r; }
+      r.pen = (hw === 'residential' || hw === 'unclassified' || hw === 'service' || hw === 'road') ? 2.5 : (hw === 'tertiary' || hw === 'tertiary_link') ? 1.3 : 1;
+    }
     // e-scooter/e-bike: a street with a bike lane/track (cycleway=lane|track|shared_lane, also :left/:right/:both) is open up to 72 km/h (45 mph)
     var lane = bike && ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both'].some(function (k) { return /^(lane|track|opposite_lane|opposite_track|shared_lane|share_busway)$/.test(tags[k] || ''); });
+    if (bicycle) r.pen = lane ? 0.8 : (hw === 'primary' || hw === 'primary_link' || hw === 'secondary' || hw === 'secondary_link') ? 1.8 : (hw === 'tertiary' || hw === 'tertiary_link') ? 1.2 : 1;
     if (lane && r.kmh > rules.roadMaxKmh + 1e-9 && r.kmh <= 72.5) { r.allowed = true; r.basis = basis; r.bikeLane = true; return r; }
     if (rules.roadMaxKmh != null && r.kmh > rules.roadMaxKmh + 1e-9) {
       r.reason = r.speed + ' ' + (unit === 'kmh' ? 'km/h' : 'mph') + (basis === 'assumed' ? ' (assumed)' : '') + ' is above this vehicle\'s ' + (unit === 'kmh' ? Math.round(rules.roadMaxKmh) + ' km/h' : Math.round(rules.roadMaxKmh / 1.609344) + ' mph') + ' road limit';
       return r;
     }
-    r.allowed = true; r.basis = basis; return r;
+    r.allowed = true;
+    // ATVs: a road is only assumed legal (local law decides) unless explicitly tagged atv=yes/designated
+    r.basis = atv ? (tags.atv === 'yes' || tags.atv === 'designated' ? 'tagged' : 'assumed') : basis; if (atv) r.pen = 1.2;
+    return r;
   }
 
   // OSM ref on Florida state roads looks like "FL 507", "US 192", "SR A1A", "I 95", sometimes several joined by ';'
@@ -344,7 +430,7 @@ var GC = (function () {
     function add(a, b, wi, len, dir, ok) {
       var l = adj.get(a); if (!l) adj.set(a, l = []);
       var e = { to: b, w: wi, len: len, ok: ok };
-      if (rules.cls === 'veh' && cls[wi].kmh) { var kmh = Math.max(5, Math.min(cls[wi].kmh, rules.topKmh)); e.mps = kmh / 3.6; e.f = 50 / kmh; }
+      if (rules.cls === 'veh' && cls[wi].kmh) { var kmh = Math.max(5, Math.min(cls[wi].kmh, rules.topKmh)); e.mps = kmh / 3.6; e.f = 50 / kmh * (cls[wi].pen || 1); }
       l.push(e);
     }
     g.ways.forEach(function (w, wi) {
@@ -568,6 +654,10 @@ var GC = (function () {
             warnings.push('Your ' + z[1] + ' is on ' + nm + ', a road your vehicle can\'t use; snapped to the nearest allowed road ' + Math.round(z[2].dist) + ' m away.');
           } else warnings.push(z[0] + ' is ' + Math.round(z[2].dist) + ' m from the nearest legal road; route ' + (z[1] === 'start' ? 'begins' : 'ends') + ' there.');
         });
+        if (rules.ev && rules.ev.usableKm > 0) {
+          var rkm = d.distance_m / 1000, uk = rules.ev.usableKm; d.ev = { routeKm: rkm, usableKm: uk, exceeds: rkm > uk };
+          if (rkm > uk) warnings.push('This route (' + VT.kmLabel(rkm, rules.unit) + ') is longer than your usable range (about ' + VT.kmLabel(uk, rules.unit) + '). Plan a charging stop: see suggested chargers below.');
+        }
         d.warnings = warnings;
         return d;
       }
@@ -623,9 +713,58 @@ var GC = (function () {
     }
     return null;
   }
-  function overpassQuery(bb) {
+  // rules (optional): pedestrians also need footways/steps/pedestrian streets; bikes also need footways tagged bicycle=yes/designated
+  function overpassQuery(bb, rules) {
     var box = [bb.s, bb.w, bb.n, bb.e].map(function (x) { return x.toFixed(5); }).join(',');
-    return '[out:json][timeout:40];way["highway"]["highway"!~"^(footway|steps|pedestrian|corridor|elevator|bridleway|proposed|construction|platform|raceway)$"](' + box + ');(._;>;);out body qt;';
+    if (rules && rules.mode === 'foot') return '[out:json][timeout:40];way["highway"]["highway"!~"^(bridleway|proposed|construction|platform|raceway|elevator)$"](' + box + ');(._;>;);out body qt;';
+    var extra = rules && rules.mode === 'bike' ? 'way["highway"~"^(footway|pedestrian)$"]["bicycle"~"^(yes|designated)$"](' + box + ');' : '';
+    return '[out:json][timeout:40];(way["highway"]["highway"!~"^(footway|steps|pedestrian|corridor|elevator|bridleway|proposed|construction|platform|raceway)$"](' + box + ');' + extra + ');(._;>;);out body qt;';
+  }
+  // ---------- EV charging stops (OSM amenity=charging_station) ----------
+  function chargingQuery(bb) {
+    var box = [bb.s, bb.w, bb.n, bb.e].map(function (x) { return x.toFixed(5); }).join(',');
+    return '[out:json][timeout:30];nwr["amenity"="charging_station"](' + box + ');out center tags;';
+  }
+  function parseChargers(json) {
+    var out = [];
+    (json && json.elements || []).forEach(function (e) {
+      var lat = e.lat != null ? e.lat : (e.center && e.center.lat), lon = e.lon != null ? e.lon : (e.center && e.center.lon), t = e.tags || {};
+      if (lat == null || lon == null || t.amenity !== 'charging_station') return;
+      if (t.access === 'private' || t.access === 'no') return;
+      var socks = Object.keys(t).filter(function (k) { return /^socket:/.test(k) && !/:(output|current|voltage)$/.test(k) && t[k] !== 'no'; }).map(function (k) { return k.slice(7); });
+      out.push({ id: e.type + e.id, lat: lat, lon: lon, name: t.name || t.brand || t.operator || 'Charging station', operator: t.operator || t.brand || '', capacity: Number(t.capacity) || null, sockets: socks, fee: t.fee || '' });
+    });
+    return out;
+  }
+  // Suggest charging stops along a route. coords: [[lat,lon]...]; usableM: range now; fullM: range after a charge.
+  // Greedy: from the current position take the farthest charger within range and within maxOffM of the route.
+  function chargerPlan(coords, chargers, usableM, fullM, maxOffM) {
+    maxOffM = maxOffM || 3000;
+    var cum = [0], i;
+    for (i = 1; i < coords.length; i++) cum.push(cum[i - 1] + hav(coords[i - 1], coords[i]));
+    var total = cum[cum.length - 1];
+    var res = { totalM: total, usableM: usableM, needed: total > usableM + 1e-6, ok: true, stops: [], message: '', nearby: [] };
+    var cands = [];
+    chargers.forEach(function (c) {
+      var best = Infinity, bj = 0;
+      for (var j = 0; j < coords.length; j++) { var d = hav([c.lat, c.lon], coords[j]); if (d < best) { best = d; bj = j; } }
+      if (best <= maxOffM) cands.push({ c: c, along: cum[bj], off: best });
+    });
+    cands.sort(function (a, b) { return a.along - b.along; });
+    res.nearby = cands.slice();
+    if (!res.needed) { res.message = 'This route is within your usable range.'; return res; }
+    var pos = 0, range = usableM, guard = 0;
+    while (total - pos > range + 1e-6 && guard++ < 30) {
+      var pick = null;
+      for (i = 0; i < cands.length; i++) if (cands[i].along > pos + 1 && cands[i].along <= pos + range) pick = cands[i];
+      if (!pick) { res.ok = false; res.message = 'No charging station found within ' + Math.round(range) + ' m of the next stretch of this route in OpenStreetMap. Plan a charge before you leave or choose a different route.'; return res; }
+      res.stops.push({ station: pick.c, alongM: pick.along, offM: pick.off });
+      pos = pick.along; range = fullM;
+      if (!(fullM > 0)) { res.ok = false; res.message = 'Battery range is too small to plan stops.'; return res; }
+    }
+    if (guard >= 30) { res.ok = false; res.message = 'Too many charging stops needed for this range.'; return res; }
+    res.message = res.stops.length + ' charging stop' + (res.stops.length === 1 ? '' : 's') + ' suggested.';
+    return res;
   }
 
 
@@ -655,7 +794,7 @@ var GC = (function () {
   }
 
   return { cartStatus: cartStatus, classifyWay: classifyWay, parseOverpass: parseOverpass, buildAdj: buildAdj, ROUTE_PADS: ROUTE_PADS, MAX_AREA_KM2: MAX_AREA_KM2, bboxAreaKm2: bboxAreaKm2, widerBbox: widerBbox, mainComponent: mainComponent, nearestAnyRoad: nearestAnyRoad, planRoute: planRoute,
-    bboxFor: bboxFor, overpassQuery: overpassQuery, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
+    bboxFor: bboxFor, overpassQuery: overpassQuery, chargingQuery: chargingQuery, parseChargers: parseChargers, chargerPlan: chargerPlan, parseLen: parseLen, parseWeight: parseWeight, parseMaxspeed: parseMaxspeed, hav: hav, dijkstra: dijkstra, snap: snap,
     MAX_SPAN_KM: MAX_SPAN_KM, viewportPlan: viewportPlan, classifyViewport: classifyViewport, LEGALITY_MIN_ZOOM: LEGALITY_MIN_ZOOM, isStateRoad: isStateRoad, lsvUpgradeFor: lsvUpgradeFor };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = GC;
