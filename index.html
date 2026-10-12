@@ -215,6 +215,7 @@ body.nvnight #dirPanel{--card:#202124;--fg:#e8eaed;--line:#3c4043;--mut:#9aa0a6;
 @media (min-width:900px){.nvtop{right:auto;width:400px;left:12px}.nvspd{width:68px;height:68px}}
 @media (max-width:420px){.nvarrow{width:56px;height:56px}.nvarrow svg{width:54px;height:54px}.nvdist{font-size:34px}.nvinstr{font-size:19px}.nvtop{padding:10px 12px}.nvsum #nvTime{font-size:26px}.nvbtn.end{min-width:68px;padding:0 14px}.nvrow{gap:6px}}
 @media (max-height:480px){.nvdist{font-size:28px}.nvinstr{font-size:17px}.nvthen{display:none}.nvsum #nvTime{font-size:22px}}
+.unitsq{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px}.unitsq select{width:auto;min-height:32px;padding:3px 8px;font-size:13px}
 </style>
 </head>
 <body>
@@ -262,6 +263,7 @@ body.nvnight #dirPanel{--card:#202124;--fg:#e8eaed;--line:#3c4043;--mut:#9aa0a6;
   <details id="mapOpts"><summary><b>Map options</b></summary>
   <button class="chip" id="switchMap" style="margin-top:8px">🗺️ Map not loading or showing a warning? Switch map</button>
   <div id="tileMsg" class="notice" style="display:none"></div>
+  <label class="unitsq">Speed and distance units <select id="unitsQuick" aria-label="Speed and distance units"><option value="auto">Auto</option><option value="mph">MPH</option><option value="kmh">KPH</option></select></label>
   <label class="chk"><input type="checkbox" id="showLegal"> Show road legality on map <span class="mut" id="legalNote"></span></label>
   <div class="mut" id="legalHint" style="display:none;font-size:12px">Likely legal based on map data; local rules may differ.</div>
   <label class="chk"><input type="checkbox" id="showRestricted"> Show restricted roads overlay <span class="mut" id="restrNote"></span></label>
@@ -424,7 +426,14 @@ var VEH = (function () {
   function speedToDisplay(mph, unit) { return unit === 'kmh' ? Math.round(mphToKmh(mph)) : Math.round(mph * 10) / 10; }
   function speedFromDisplay(v, unit) { v = Number(v); return unit === 'kmh' ? Math.round(kmhToMph(v) * 10) / 10 : v; }
   function distLabel(m, unit) { return unit === 'kmh' ? (m / 1000).toFixed(m < 10000 ? 2 : 1) + ' km' : (m / 1609.344).toFixed(m < 16093 ? 2 : 1) + ' mi'; }
-  return { KMH: KMH, TYPES: TYPES, ORDER: ORDER, get: get, isVehicle: isVehicle, isKnown: isKnown, maxMph: maxMph, rulesFor: rulesFor, unitFor: unitFor,
+  // Convert every "N mph" in a text to km/h when unit is 'kmh' (25 mph -> 40 km/h, 35 -> 56, 20 -> 32; rounded to a whole number). mph text is returned unchanged.
+  function convertSpeedText(t, unit) {
+    t = String(t == null ? '' : t); if (unit !== 'kmh') return t;
+    return t.replace(/(\d+(?:\.\d+)?)\s*mph\b/g, function (m, n) { return Math.round(mphToKmh(Number(n))) + ' km/h'; });
+  }
+  // number in one unit -> number in another ('mph'|'kmh'), whole numbers
+  function convSpeed(v, from, to) { v = Number(v); if (!isFinite(v) || from === to) return v; return to === 'kmh' ? Math.round(mphToKmh(v)) : Math.round(kmhToMph(v)); }
+  return { KMH: KMH, convertSpeedText: convertSpeedText, convSpeed: convSpeed, TYPES: TYPES, ORDER: ORDER, get: get, isVehicle: isVehicle, isKnown: isKnown, maxMph: maxMph, rulesFor: rulesFor, unitFor: unitFor,
     toUnit: toUnit, mphToKmh: mphToKmh, kmhToMph: kmhToMph, speedToDisplay: speedToDisplay, speedFromDisplay: speedFromDisplay, distLabel: distLabel };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = VEH;
@@ -932,6 +941,19 @@ var GC = (function () {
   // Any other state: same conservative defaults, but the LSV road limit is the state's and an 'unverified' marker is attached.
   function cartStatus(p, opts) {
     opts = opts || {};
+    var o0 = cartStatusInner(p, opts);
+    // golf cart / LSV rules are written in mph: show them in km/h when the units setting asks for it
+    if (o0 && !(o0.rules && o0.rules.cls === 'veh')) {
+      var u0 = opts.unit === 'kmh' ? 'kmh' : 'mph', cv = function (t) { return VT.convertSpeedText(t, u0); };
+      if (o0.rules) o0.rules.unit = u0; o0.unit = u0;
+      if (u0 === 'kmh') {
+        o0.label = cv(o0.label); o0.explain = o0.explain.map(cv); o0.warnings = o0.warnings.map(cv);
+        o0.checklist.forEach(function (c) { c.item = cv(c.item); if (c.note) c.note = cv(c.note); });
+      }
+    }
+    return o0;
+  }
+  function cartStatusInner(p, opts) {
     // New vehicle types (moped, motorcycle, e-scooter, L6e) and anything in Europe use the shared vehicle table below. Florida golf cart/LSV logic is untouched.
     if (VT.isVehicle(p.type) || opts.region === 'EU') return vehicleStatus(p, opts);
     var st = opts.state || null;
@@ -1133,7 +1155,16 @@ var GC = (function () {
   function isTagYes(v) { return v === 'yes' || v === 'designated' || v === 'permissive'; }
 
   // returns {allowed, basis, speed, reason, crossable, name, hw}
+  // Golf cart / LSV rules compare in mph; when rules.unit is 'kmh' the reported speed and reason are shown in km/h.
   function classifyWay(tags, rules) {
+    var r = classifyWayCore(tags, rules);
+    if (rules && rules.cls !== 'veh' && rules.unit === 'kmh') {
+      if (r.speed != null) r.speed = Math.round(VT.mphToKmh(r.speed));
+      if (r.reason) r.reason = VT.convertSpeedText(r.reason, 'kmh');
+    }
+    return r;
+  }
+  function classifyWayCore(tags, rules) {
     tags = tags || {};
     if (rules && rules.cls === 'veh') return classifyVehicle(tags, rules);
     var hw = tags.highway;
@@ -1970,7 +2001,10 @@ var PL = (function () {
     return places.map(function (p) { var q = {}; for (var k in p) q[k] = p[k]; q.distanceM = hav(origin, [p.lat, p.lon]); return q; })
       .sort(function (a, b) { return a.distanceM - b.distanceM; });
   }
-  function fmtDist(m) { var mi = m / 1609.344; return mi < 0.1 ? Math.round(m * 3.28084) + ' ft' : mi.toFixed(1) + ' mi'; }
+  function fmtDist(m, unit) {
+    if (unit === 'kmh') return m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1) + ' km';
+    var mi = m / 1609.344; return mi < 0.1 ? Math.round(m * 3.28084) + ' ft' : mi.toFixed(1) + ' mi';
+  }
 
   // ----- Photon text search -----
   function photonUrl(q, bias) {
@@ -1993,12 +2027,12 @@ var PL = (function () {
 
   // ----- reachability wording (routing result -> badge) -----
   var WALK_M = 150;
-  function reachability(res, place) {
+  function reachability(res, place, unit) {
     var snapEnd = res && res.snap && res.snap.end;
     if (res && res.error === 'cart-not-eligible') return { state: 'none', text: 'Your cart is not eligible yet (see cart status)' };
     if (res && res.ok) {
       var mi = res.distance_m / 1609.344, min = Math.max(1, Math.round(res.time_s / 60));
-      var trip = mi.toFixed(1) + ' mi, ~' + min + ' min';
+      var trip = (unit === 'kmh' ? (res.distance_m / 1000).toFixed(1) + ' km' : mi.toFixed(1) + ' mi') + ', ~' + min + ' min';
       var d = snapEnd ? snapEnd.dist : 0;
       if (d > WALK_M) return { state: 'walk', text: 'Legal route ends about ' + Math.round(d) + ' m from here; you may need to walk (' + trip + ')', walkM: d };
       var miss = (res.segments || []).filter(function (s) { return s.basis === 'assumed'; }).reduce(function (a, s) { return a + s.len; }, 0);
@@ -2379,10 +2413,14 @@ function curState(){try{var p=(typeof pts!=='undefined'&&pts&&pts.start)||mapCen
 function curPoint(){try{return(typeof pts!=='undefined'&&pts&&pts.start)||mapCenter()}catch(e){return null}}
 // Europe country row (EU-27, UK, NO, CH) for the start point or map center; null elsewhere.
 function curCountry(){try{var p=curPoint();return p?EUR.detect(p[0],p[1]):null}catch(e){return null}}
-// Display unit: vehicles and anything in Europe follow region + the Settings override; US golf carts/LSVs stay in mph.
-function unitOf(c){c=c||cart();var co=curCountry();return(VEH.isVehicle(c.type)||co)?VEH.unitFor(profile&&profile.prefs.units,co):'mph'}
+// Display unit: the Units setting (Auto / mph / km/h). Auto = km/h in the EU, mph in the US and UK. Applies to every vehicle type.
+function unitOf(c){return VEH.unitFor(profile&&profile.prefs.units,curCountry())}
 function ulab(u){return u==='kmh'?'km/h':'mph'}
-function ru(){return status&&status.rules&&status.rules.cls==='veh'?status.rules.unit:'mph'}
+function ru(){return status&&status.rules&&status.rules.unit||unitOf()}
+// Speed shown for a planned route/segment: converts from the unit the route was planned in
+function pspd(v,r){var from=r&&r.rules&&r.rules.unit||'mph';return VEH.convSpeed(v,from,ru())}
+function spdTxt(t){return VEH.convertSpeedText(t,ru())}
+function applyUnits(){computeStatus();renderMain();if(NV.sess)NV.sess.unit=ru();try{if(!NV.on&&navRoute&&$('go'))$('go').click()}catch(e){}}
 function computeStatus(){var co=curCountry();status=PR.statusFor(GC,profile,null,curState(),co?{country:co}:null);return status}
 // Compact Europe warning (rules are unverified research): one line, links to EU law and the country's authority or a web search.
 function euroWarn(sr){
@@ -2409,7 +2447,7 @@ function statusHTML(st){
 }
 function checklistHTML(st){return st.checklist.map(function(c){return'<li class="'+(c.met?'yes':'no')+'">'+esc(c.item)+(!c.met&&c.note?' <span class="mut">('+esc(c.note)+')</span>':'')+'</li>'}).join('')}
 function renderMain(){
-  computeStatus();var c=cart();
+  computeStatus();var c=cart();var uq=$('unitsQuick');if(uq)uq.value=(profile.prefs.units)||'auto';
   var vt=VEH.get(c.type);
   $('cartChip').textContent=(vt?vt.emoji:'🛺')+' '+PR.cartLabel(c)+' · '+(!status.ok?'⛔ not eligible':status.cls==='lsv'?'LSV':status.cls==='golf'?'Golf cart':vt.label.replace(/ \(.*$/,''));
   var el=$('status');el.className='status '+(status.ok?'ok':'bad');el.innerHTML=statusHTML(status);
@@ -2417,7 +2455,7 @@ function renderMain(){
   $('lsvCard').style.display=(c.type==='golf'||c.type==='lsv')&&!status.country?'':'none';
   $('checklist').innerHTML=checklistHTML(status);
   var p=profile.prefs;
-  $('prefLine').textContent=(profile.name?profile.name+' · ':'')+(p.night==='night'?'Day + night':'Daytime only')+' · '+(VEH.isVehicle(c.type)?(status.country?'Europe · ':'')+ulab(status.unit||'mph')+' units':p.strict?'strict mode':'assumed roads up to '+p.designatedLimit+' mph')+' · change in ⚙️ Settings';
+  $('prefLine').textContent=(profile.name?profile.name+' · ':'')+(p.night==='night'?'Day + night':'Daytime only')+' · '+(VEH.isVehicle(c.type)?(status.country?'Europe · ':'')+ulab(ru())+' units':p.strict?'strict mode':'assumed roads up to '+VEH.speedToDisplay(p.designatedLimit,ru())+' '+ulab(ru()))+' · change in ⚙️ Settings';
 }
 
 // ---------- generic field binding (data-k) ----------
@@ -2438,8 +2476,8 @@ function bindFields(root,obj,after){
     el.addEventListener('input',h);el.addEventListener('change',h);
   });
 }
-function prefsFrag(pr,withMap){return(withMap?'<label>Map style</label><select data-k="basemap">'+[['auto','Auto (follows light/dark mode)'],['street','Street'],['satellite','Satellite'],['topo','Topo'],['dark','Dark']].map(function(o){return'<option value="'+o[0]+'"'+(pr.basemap===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>Map provider</label><select data-k="tileProvider">'+[['esri','Esri (default, works everywhere)'],['carto','CARTO'],['osm','OpenStreetMap']].map(function(o){return'<option value="'+o[0]+'"'+(pr.tileProvider===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><p class="mut">CARTO and OpenStreetMap block or watermark tiles on pages opened from a file (file://), showing “API key required” or “Access blocked”. They work when the app is hosted on an https page. Esri works either way.</p>':'')+'<label>Units</label><select data-k="units">'+[['auto','Automatic (miles in the US and UK, km/h in the EU)'],['kmh','km/h and km'],['mph','mph and miles']].map(function(o){return'<option value="'+o[0]+'"'+((pr.units||'auto')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>When will you drive?</label><select data-k="night"><option value="day"'+(pr.night==='day'?' selected':'')+'>Daytime only</option><option value="night"'+(pr.night==='night'?' selected':'')+'>Also at night</option></select>'+
- '<label>Golf cart: speed cutoff for roads assumed to be designated</label><select data-k="designatedLimit">'+[25,30,35].map(function(n){return'<option value="'+n+'"'+(pr.designatedLimit===n?' selected':'')+'>'+n+' mph'+(n===25?' (default)':'')+'</option>'}).join('')+'</select>'+
+function prefsFrag(pr,withMap){return(withMap?'<label>Map style</label><select data-k="basemap">'+[['auto','Auto (follows light/dark mode)'],['street','Street'],['satellite','Satellite'],['topo','Topo'],['dark','Dark']].map(function(o){return'<option value="'+o[0]+'"'+(pr.basemap===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>Map provider</label><select data-k="tileProvider">'+[['esri','Esri (default, works everywhere)'],['carto','CARTO'],['osm','OpenStreetMap']].map(function(o){return'<option value="'+o[0]+'"'+(pr.tileProvider===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><p class="mut">CARTO and OpenStreetMap block or watermark tiles on pages opened from a file (file://), showing “API key required” or “Access blocked”. They work when the app is hosted on an https page. Esri works either way.</p>':'')+'<label>Units</label><select data-k="units">'+[['auto','Auto (mph in the US and UK, km/h in the EU)'],['mph','mph and miles'],['kmh','km/h and km']].map(function(o){return'<option value="'+o[0]+'"'+((pr.units||'auto')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><label>When will you drive?</label><select data-k="night"><option value="day"'+(pr.night==='day'?' selected':'')+'>Daytime only</option><option value="night"'+(pr.night==='night'?' selected':'')+'>Also at night</option></select>'+
+ '<label>Golf cart: speed cutoff for roads assumed to be designated</label><select data-k="designatedLimit">'+[25,30,35].map(function(n){return'<option value="'+n+'"'+(pr.designatedLimit===n?' selected':'')+'>'+VEH.speedToDisplay(n,ru())+' '+ulab(ru())+(n===25?' (default)':'')+'</option>'}).join('')+'</select>'+
  '<label class="chk"><input type="checkbox" data-k="strict"'+(pr.strict?' checked':'')+'> Strict mode: only roads tagged golf_cart=yes in OpenStreetMap (very few, expect "no route" often)</label>'+
  '<label class="chk"><input type="checkbox" data-k="allowCrossing"'+(pr.allowCrossing?' checked':'')+'> Allow crossing faster roads at intersections</label>'+
  '<p class="mut">The statute sets no speed number for golf carts; the cutoff is an assumption about what local governments designate.</p>'}
@@ -2653,7 +2691,7 @@ function renderSettings(msg){
   h+='<div class="card"><h2>Carts</h2>';
   profile.carts.forEach(function(c){
     var st=PR.statusFor(GC,profile,c.id);
-    h+='<div class="cartrow'+(c.id===profile.activeCartId?' act':'')+'"><b>'+esc(PR.cartLabel(c))+'</b>'+(c.id===profile.activeCartId?' <span class="mut">(active)</span>':'')+'<div class="mut">'+esc(c.make)+(c.make?' · ':'')+esc((VEH.get(c.type)||VEH.get('golf')).label.replace(/ \(.*$/,''))+' · '+esc(c.speed)+' mph</div><div class="mut">'+(st.ok?'✅ ':'⛔ ')+esc(st.label)+'</div><div class="btns">'+
+    h+='<div class="cartrow'+(c.id===profile.activeCartId?' act':'')+'"><b>'+esc(PR.cartLabel(c))+'</b>'+(c.id===profile.activeCartId?' <span class="mut">(active)</span>':'')+'<div class="mut">'+esc(c.make)+(c.make?' · ':'')+esc((VEH.get(c.type)||VEH.get('golf')).label.replace(/ \(.*$/,''))+' · '+esc(VEH.speedToDisplay(c.speed,ru()))+' '+ulab(ru())+'</div><div class="mut">'+(st.ok?'✅ ':'⛔ ')+esc(st.label)+'</div><div class="btns">'+
      (c.id!==profile.activeCartId?'<button data-act="use" data-id="'+c.id+'">Use this cart</button>':'')+'<button data-act="edit" data-id="'+c.id+'">Edit</button>'+(profile.carts.length>1?'<button class="danger" data-act="del" data-id="'+c.id+'">Delete</button>':'')+'</div></div>';
   });
   h+='<button id="addCart" style="width:100%;margin-top:6px">＋ Add a cart</button><div id="editor"></div></div>';
@@ -2669,7 +2707,7 @@ function renderSettings(msg){
   // prefs
   var prefCard=root.querySelectorAll('.card')[2];
   prefCard.querySelectorAll('[data-k]').forEach(function(el){var k=el.getAttribute('data-k');
-    function hnd(){profile.prefs[k]=el.type==='checkbox'?el.checked:(k==='designatedLimit'?+el.value:el.value);persist();if(k==='basemap'||k==='tileProvider')applyBasemap(true)}
+    function hnd(){profile.prefs[k]=el.type==='checkbox'?el.checked:(k==='designatedLimit'?+el.value:el.value);persist();if(k==='basemap'||k==='tileProvider')applyBasemap(true);if(k==='units'){applyUnits();var q=$('unitsQuick');if(q)q.value=profile.prefs.units}}
     el.addEventListener('change',hnd)});
   bindHome(root.querySelectorAll('.card')[3],function(){return profile.home},function(v){profile.home=v;persist()});
   root.querySelectorAll('[data-act]').forEach(function(b){b.onclick=function(){
@@ -3062,7 +3100,7 @@ function nvLimitUi(P,v){
   var box=$('nvLimit');
   if(!lim){box.hidden=true}
   else{box.hidden=false;box.className='nvlim'+(u==='kmh'?' eu':'')+(lim.assumed?' asm':'');
-    box.innerHTML='<small>'+(lim.assumed?'ASSUMED':'LIMIT')+'</small><b>'+lim.limit+'</b>';box.setAttribute('aria-label',(lim.assumed?'Assumed':'Posted')+' speed limit '+lim.limit)}
+    lim.limit=pspd(lim.limit,navRoute);box.innerHTML='<small>'+(lim.assumed?'ASSUMED':'LIMIT')+'</small><b>'+lim.limit+'</b>';box.setAttribute('aria-label',(lim.assumed?'Assumed':'Posted')+' speed limit '+lim.limit+' '+(u==='kmh'?'kilometres per hour':'miles per hour'))}
   var sp=NV.sess?NV.sess.speed:0;
   $('nvSpdB').className='nvspd'+(NAV.speedState(sp,lim,u)==='over'?' over':'');
   NV.lim=lim;
@@ -3469,6 +3507,7 @@ if(!profile||!profile.setupDone){profile=null;openWizard(false);profile=PR.defau
 else persist();
 $('storeNotice').style.display=Store.persistent?'none':'block';
 renderMain();
+$('unitsQuick').addEventListener('change',function(){profile.prefs.units=this.value;persist();applyUnits()});
 (function(){try{var t=JSON.parse(localStorage.getItem('cartroute.trip')||'null');if(!t)return;if(t.sa)$('aStart').value=t.sa;if(t.ea&&!(t.ea===t.sa&&t.s&&t.e&&(t.s[0]!==t.e[0]||t.s[1]!==t.e[1])))$('aEnd').value=t.ea;if(t.s)setPoint('start',t.s);if(t.e)setPoint('end',t.e);if(t.s&&!t.e){mode='end';hi()}if(map&&(t.s||t.e))map.setView(t.s||t.e,14)}catch(x){}})();
 ['aStart','aEnd'].forEach(function(id){$(id).addEventListener('input',saveTrip)});
 window.__cartroute={getTile:function(){return tileChainList[tileIdx]&&tileChainList[tileIdx].key},getProfile:function(){return profile},store:Store,getPts:function(){return pts},getPlaces:function(){return places},isFollowing:function(){return watchId!==null}};
