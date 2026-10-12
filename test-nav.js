@@ -31,6 +31,25 @@ ok(NAV.speedLabel(8.94, 'mph') === '20 mph' && NAV.speedLabel(12.5, 'kmh') === '
   ok(!/&amp;/.test(html), 'no &amp; entities in the built page');
   ok(/@media \(min-width:900px\)\{#dirPanel\{right:12px/.test(html), 'desktop panel anchored right of the map');
 }
+// ---- GPS-style maneuver icons + speed limit bubble
+{
+  const k = (kind, type) => NAV.iconKey({ type: type || 'turn', kind });
+  ok(k('straight') === 'straight' && k('depart', 'depart') === 'straight' && k('left') === 'left' && k('right') === 'right', 'icon key: straight/depart/left/right');
+  ok(k('slight-left') === 'slight-left' && k('slight-right') === 'slight-right' && k('sharp-left') === 'sharp-left' && k('sharp-right') === 'sharp-right', 'icon key: slight and sharp turns');
+  ok(k('uturn') === 'uturn' && NAV.iconKey({ type: 'roundabout', kind: 'roundabout' }) === 'roundabout' && NAV.iconKey({ type: 'arrive', kind: 'arrive' }) === 'arrive' && NAV.iconKey(null) === 'straight', 'icon key: u-turn, roundabout, arrive, null');
+  const keys = ['straight', 'slight-left', 'left', 'sharp-left', 'slight-right', 'right', 'sharp-right', 'uturn', 'roundabout', 'arrive'];
+  ok(keys.every(x => { const v = NAV.arrowSvg(x, 40); return /^<svg/.test(v) && v.includes('data-icon="' + x + '"') && v.includes('width="40"'); }), 'every maneuver has an SVG icon');
+  ok(NAV.arrowSvg('left').includes('scale(-1 1)') && !NAV.arrowSvg('right').includes('scale(-1 1)') && NAV.arrowSvg('arrive').includes('#ea4335'), 'left icons mirror the right ones; arrive is a red pin');
+  const segs = [{ len: 500, speed: 25, basis: 'tagged' }, { len: 300, speed: 35, basis: 'assumed' }, { len: 200, speed: null, basis: 'assumed' }];
+  const l0 = NAV.limitAt(segs, 100), l1 = NAV.limitAt(segs, 600), l2 = NAV.limitAt(segs, 900);
+  ok(l0.limit === 25 && !l0.assumed && l1.limit === 35 && l1.assumed && l2 === null && NAV.limitAt([], 5) === null && NAV.limitAt(segs, 99999) === null, 'limit at distance: tagged, assumed, unknown, past the end');
+  ok(NAV.speedNum(8.94, 'mph') === 20 && NAV.speedNum(12.5, 'kmh') === 45 && NAV.speedNum(-1, 'mph') === 0, 'speed number follows unit');
+  ok(NAV.speedState(11.2, { limit: 25, assumed: false }, 'mph') === 'ok' && NAV.speedState(12, { limit: 25, assumed: false }, 'mph') === 'over' && NAV.speedState(12, { limit: 25, assumed: true }, 'mph') === 'ok' && NAV.speedState(14, { limit: 25, assumed: true }, 'mph') === 'over' && NAV.speedState(30, null, 'mph') === 'none', 'speed bubble turns red only over a known limit (assumed has +5 margin)');
+  const html = require('fs').readFileSync(__dirname + '/index.html', 'utf8');
+  ok(/id="nvOverview"/.test(html) && /id="nvMenu"/.test(html) && /id="nvLimit"/.test(html) && /id="nvSpdU"/.test(html) && /id="moreBox"/.test(html) && /id="resMore"/.test(html), 'built page has overview, menu, limit bubble, More box and details');
+  ok(/#1a73e8/.test(html) && /nvDrawRoute/.test(html) && /nvDriven/.test(html), 'blue route line with driven portion');
+  ok(/#map\{left:300px;width:auto\}/.test(html) && /width:300px/.test(html), 'desktop sidebar is 300px wide');
+}
 return (async () => {
   const log = [];
   const nv = { wakeLock: { request: async t => { log.push('req ' + t); let rel = null; return { release: async () => log.push('rel'), addEventListener: (e, f) => { rel = f; }, _fire: () => rel && rel() }; } } };

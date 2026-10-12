@@ -45,6 +45,52 @@ var NAV = (function () {
     return unit === 'kmh' ? Math.round(v * 3.6) + ' km/h' : Math.round(v * 2.23694) + ' mph';
   }
 
+
+  // ---- maneuver icons (inline SVG, currentColor) ----
+  var ICONS = {
+    'straight': { d: 'M24 44 V12', h: 'M15 21 L24 11 L33 21' },
+    'slight-right': { d: 'M18 44 V32 L32 18', h: 'M23 14 H34 V25' },
+    'right': { d: 'M16 44 V28 Q16 19 25 19 H34', h: 'M29 11 L38 19 L29 27' },
+    'sharp-right': { d: 'M14 44 V22 Q14 14 22 14 Q30 14 33 22 L36 34', h: 'M26 29 L36 36 L40 25' },
+    'uturn': { d: 'M16 44 V19 Q16 9 25 9 Q34 9 34 19 V32', h: 'M26 25 L34 34 L42 25' },
+    'roundabout': { d: 'M24 44 V35 M17 28 A9 9 0 1 1 31 28 M31 28 L33 20', h: 'M26 24 L33 18 L36 27' },
+    'arrive': { d: '', h: '', pin: true }
+  };
+  function iconKey(step) {
+    if (!step) return 'straight';
+    if (step.type === 'arrive' || step.kind === 'arrive') return 'arrive';
+    if (step.type === 'roundabout' || step.kind === 'roundabout') return 'roundabout';
+    var k = step.kind || 'straight';
+    if (k === 'depart') return 'straight';
+    var side = /left$/.test(k) ? 'left' : 'right', base = k.replace(/^(slight|sharp)-?/, '');
+    if (k === 'uturn') return 'uturn';
+    if (/^slight/.test(k)) return 'slight-' + side;
+    if (/^sharp/.test(k)) return 'sharp-' + side;
+    return base === 'left' || base === 'right' ? base : 'straight';
+  }
+  // returns the SVG markup; left variants are the right ones mirrored
+  function arrowSvg(key, size) {
+    var left = /left$/.test(key), base = key.replace('left', 'right'), ic = ICONS[base] || ICONS.straight, n = size || 48;
+    if (ic.pin) return '<svg class="mv" data-icon="arrive" viewBox="0 0 48 48" width="' + n + '" height="' + n + '" aria-hidden="true"><path d="M24 45 C24 45 10 30 10 20 A14 14 0 0 1 38 20 C38 30 24 45 24 45 Z" fill="#ea4335" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="20" r="5.5" fill="#fff"/></svg>';
+    return '<svg class="mv" data-icon="' + key + '" viewBox="0 0 48 48" width="' + n + '" height="' + n + '" aria-hidden="true"><g' + (left ? ' transform="translate(48 0) scale(-1 1)"' : '') + ' fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic.d + '"/><path d="' + ic.h + '"/></g></svg>';
+  }
+
+  // ---- posted / assumed speed limit at a distance along the route. segs: route.segments [{len, speed, basis}]
+  function limitAt(segs, along) {
+    if (!segs || !segs.length) return null;
+    var c = 0, hit = segs[segs.length - 1];
+    for (var i = 0; i < segs.length; i++) { c += segs[i].len || 0; if (along <= c) { hit = segs[i]; break; } }
+    if (!hit || !(hit.speed > 0)) return null;
+    return { limit: Math.round(hit.speed), assumed: !(hit.basis === 'tagged' || hit.basis === 'posted') };
+  }
+  function speedNum(mps, unit) { var v = Math.max(0, Number(mps) || 0); return Math.round(unit === 'kmh' ? v * 3.6 : v * 2.23694); }
+  // 'over' when the shown speed is above a KNOWN limit; assumed limits only count when well over (+5)
+  function speedState(mps, lim, unit) {
+    if (!lim) return 'none';
+    var v = speedNum(mps, unit);
+    return v > lim.limit + (lim.assumed ? 5 : 0) ? 'over' : 'ok';
+  }
+
   // ---- announcements. ann = {idx, fired:{far,near,now}}. Returns list of {tier,text,urgent}
   function newAnnouncer() { return { idx: -1, fired: {} }; }
   // a straight-ahead step onto an unnamed road is not worth interrupting for
@@ -189,7 +235,7 @@ var NAV = (function () {
     return fixes;
   }
 
-  return { MAX_ACC_M: MAX_ACC_M, OFF_M: OFF_M, OFF_FIXES: OFF_FIXES, REROUTE_MIN_MS: REROUTE_MIN_MS, leadDistances: leadDistances, ttsClean: ttsClean, spokenDist: spokenDist, speedLabel: speedLabel,
+  return { MAX_ACC_M: MAX_ACC_M, OFF_M: OFF_M, OFF_FIXES: OFF_FIXES, REROUTE_MIN_MS: REROUTE_MIN_MS, leadDistances: leadDistances, ttsClean: ttsClean, spokenDist: spokenDist, speedLabel: speedLabel, iconKey: iconKey, arrowSvg: arrowSvg, limitAt: limitAt, speedNum: speedNum, speedState: speedState,
     newAnnouncer: newAnnouncer, announce: announce, silent: silent, newOffState: newOffState, offRouteStep: offRouteStep, eta: eta, fmtDur: fmtDur, createWakeLock: createWakeLock,
     createSession: createSession, simulateFixes: simulateFixes };
 })();
