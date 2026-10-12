@@ -216,6 +216,7 @@ body.nvnight #dirPanel{--card:#202124;--fg:#e8eaed;--line:#3c4043;--mut:#9aa0a6;
 @media (max-width:420px){.nvarrow{width:56px;height:56px}.nvarrow svg{width:54px;height:54px}.nvdist{font-size:34px}.nvinstr{font-size:19px}.nvtop{padding:10px 12px}.nvsum #nvTime{font-size:26px}.nvbtn.end{min-width:68px;padding:0 14px}.nvrow{gap:6px}}
 @media (max-height:480px){.nvdist{font-size:28px}.nvinstr{font-size:17px}.nvthen{display:none}.nvsum #nvTime{font-size:22px}}
 .unitsq{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px}.unitsq select{width:auto;min-height:32px;padding:3px 8px;font-size:13px}
+.dimrow{gap:6px;margin-top:6px}.dimrow input{min-width:0}
 </style>
 </head>
 <body>
@@ -381,7 +382,7 @@ function computeStatus(){var co=curCountry();status=PR.statusFor(GC,profile,null
 // Compact Europe warning (rules are unverified research): one line, links to EU law and the country's authority or a web search.
 function euroWarn(sr){
   if(!sr||!sr.country)return'';var t=EUR.get(sr.country.code);if(!t)return'';
-  return'<div class="stwarn">'+esc(EUR.flag(t))+' ⚠️ '+esc(EUR.warning(t))+' <a href="'+esc(EUR.lawLink(t))+'" target="_blank" rel="noopener">EU rules</a> · <a href="'+esc(EUR.authorityLink(t))+'" target="_blank" rel="noopener">'+esc(t.n)+' authority</a></div>';
+  return'<div class="stwarn">'+esc(EUR.flag(t))+' ⚠️ '+esc((VEH.get(cart().type)||{}).mode?'Rules in '+t.n+' aren\'t verified for this vehicle type; check local law.':EUR.warning(t))+' <a href="'+esc(EUR.lawLink(t))+'" target="_blank" rel="noopener">EU rules</a> · <a href="'+esc(EUR.authorityLink(t))+'" target="_blank" rel="noopener">'+esc(t.n)+' authority</a></div>';
 }
 // Compact warning for states whose rules aren't verified: one line, links out to the state's own resources (no rule text here).
 function stateWarn(sr){
@@ -397,6 +398,7 @@ function statusHTML(st){
   var h='<b class="t">'+(st.ok?'✅ ':'⛔ ')+esc(st.label)+'</b>';
   st.explain.forEach(function(t){h+='<div>'+esc(t)+'</div>'});
   if(st.warnings.length)h+='<ul>'+st.warnings.map(function(w){return'<li class="warn">'+esc(w)+'</li>'}).join('')+'</ul>';
+  if(st.link)h+='<p><a href="'+esc(st.link.href)+'" target="_blank" rel="noopener">'+esc(st.link.text)+'</a></p>';
   h+=stateWarn(st)+euroWarn(st);
   if(st.country&&!st.ok&&!VEH.isVehicle(cart().type))h+='<button id="useL6e" style="margin-top:8px">Use a light quadricycle (L6e, 45 km/h)</button>';
   return h;
@@ -415,10 +417,16 @@ function renderMain(){
 }
 
 // ---------- generic field binding (data-k) ----------
-function typeFrag(c){return'<label>Vehicle type</label><select data-k="type">'+VEH.ORDER.map(function(k){var v=VEH.get(k);return'<option value="'+k+'"'+(c.type===k?' selected':'')+'>'+esc(v.emoji+' '+v.label)+'</option>'}).join('')+'</select>'+(VEH.isVehicle(c.type)?'<p class="mut">'+esc(VEH.get(c.type).note)+'</p>':'')+
+function typeOpts(c){return VEH.GROUPS.map(function(g){return'<optgroup label="'+esc(g[0])+'">'+g[1].map(function(k){var v=VEH.get(k);return'<option value="'+k+'"'+(c.type===k?' selected':'')+'>'+esc(v.emoji+' '+v.label)+'</option>'}).join('')+'</optgroup>'}).join('')}
+function numIn(c,k,label,val,min,max,step){return'<div><label>'+label+'</label><input type="number" data-k="'+k+'" inputmode="decimal" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(val)+'"></div>'}
+function extraFrag(c){var t=VEH.get(c.type),u=unitOf(c),k=u==='kmh';if(!t)return'';
+  if(t.dims)return'<div class="row dimrow">'+numIn(c,'heightM','Height ('+(k?'m':'ft')+')',VEH.lenToDisplay(c.heightM,u),0.5,k?6:20,'any')+numIn(c,'lengthM','Length ('+(k?'m':'ft')+')',VEH.lenToDisplay(c.lengthM,u),0.5,k?40:131,'any')+numIn(c,'weightT','Weight ('+(k?'t':'short tons')+')',VEH.weightToDisplay(c.weightT,u),0.1,k?100:110,'any')+'</div><p class="mut">Roads with a mapped limit lower than these are avoided.</p>';
+  if(t.ev)return'<div class="row dimrow">'+numIn(c,'rangeKm','Rated range ('+(k?'km':'mi')+')',VEH.rangeToDisplay(c.rangeKm,u),3,k?1500:932,'any')+numIn(c,'socPct','Charge now (%)',c.socPct,1,100,'any')+'</div><p class="mut">Usable range about '+VEH.kmLabel(VEH.evRange(c.rangeKm,c.socPct).usableKm,u)+' after a safety reserve.</p>';
+  return''}
+function typeFrag(c){return'<label>Vehicle type</label><select data-k="type">'+typeOpts(c)+'</select>'+(VEH.isVehicle(c.type)?'<p class="mut">'+esc(VEH.get(c.type).note)+'</p>':'')+extraFrag(c)+
  '<label>Make / model</label><input type="text" data-k="make" maxlength="80" placeholder="e.g. Club Car Onward" value="'+esc(c.make)+'">'+
  '<label>Nickname</label><input type="text" data-k="nickname" maxlength="80" placeholder="e.g. Beach Buggy" value="'+esc(c.nickname)+'">'}
-function speedFrag(c){var u=unitOf(c),v=VEH.isVehicle(c.type);return'<label>Top speed ('+ulab(u)+')</label><input type="number" data-k="speed" inputmode="decimal" min="1" max="'+(u==='kmh'?160:99)+'" step="any" value="'+esc(VEH.speedToDisplay(c.speed,u))+'">'+(v?'<p class="mut">Your usual cruising speed. Up to '+(u==='kmh'?Math.round(VEH.mphToKmh(VEH.maxMph(c.type)))+' km/h':Math.round(VEH.maxMph(c.type))+' mph')+' for this vehicle type.</p>':'<p class="mut">Check the spec sheet or a GPS app. Golf carts are legally capped at 20 mph; LSVs are 21–25 mph.</p>')}
+function speedFrag(c){var u=unitOf(c),v=VEH.isVehicle(c.type);return'<label>'+(c.type==='foot'?'Walking speed':c.type==='bicycle'?'Cruising speed':'Top speed')+' ('+ulab(u)+')</label><input type="number" data-k="speed" inputmode="decimal" min="1" max="'+(u==='kmh'?160:99)+'" step="any" value="'+esc(VEH.speedToDisplay(c.speed,u))+'">'+(v?'<p class="mut">Your usual cruising speed. Up to '+(u==='kmh'?Math.round(VEH.mphToKmh(VEH.maxMph(c.type)))+' km/h':Math.round(VEH.maxMph(c.type))+' mph')+' for this vehicle type.</p>':'<p class="mut">Check the spec sheet or a GPS app. Golf carts are legally capped at 20 mph; LSVs are 21–25 mph.</p>')}
 function chk(c,l){return'<label class="chk"><input type="checkbox" data-k="'+l[0]+'"'+(c[l[0]]?' checked':'')+'> '+esc(l[1])+'</label>'}
 function equipFrag(c){if(VEH.isVehicle(c.type))return'<p class="mut">No equipment checklist is needed for this vehicle type. Follow local equipment and helmet rules.</p>';return EQ_LABELS.map(function(l){return chk(c,l)}).join('')+'<p class="mut" style="margin-top:12px"><b>Only needed to qualify as an LSV</b></p>'+LSV_LABELS.map(function(l){return chk(c,l)}).join('')}
 function bindFields(root,obj,after){
@@ -426,6 +434,7 @@ function bindFields(root,obj,after){
     var k=el.getAttribute('data-k');
     function h(){var v=el.type==='checkbox'?el.checked:el.value;
       if(k==='speed')v=VEH.speedFromDisplay(v,unitOf(obj));
+      else if(k==='heightM'||k==='lengthM')v=VEH.lenFromDisplay(v,unitOf(obj));else if(k==='weightT')v=VEH.weightFromDisplay(v,unitOf(obj));else if(k==='rangeKm')v=VEH.rangeFromDisplay(v,unitOf(obj));else if(k==='socPct')v=Number(v);
       var prev=obj[k];obj[k]=v;
       if(k==='type'&&VEH.get(v)&&(VEH.isVehicle(v)||VEH.isVehicle(prev))){obj.speed=VEH.get(v).defMph;var sp=root.querySelector('[data-k="speed"]');if(sp)sp.value=VEH.speedToDisplay(obj.speed,unitOf(obj))}
       if(after)after(k)}
@@ -618,7 +627,8 @@ function renderWizard(){
   h+='<div class="err" id="wErr"></div><div class="nav">'+(s>0?'<button id="wBack">Back</button>':(wz.rerun?'<button id="wCancel">Cancel</button>':''))+'<button class="pri" id="wNext">'+(s===STEPS-1?'Finish':'Next')+'</button></div>';
   var root=$('wizIn');root.innerHTML=h;root.scrollTop=0;$('wizard').scrollTop=0;
   if(k===0)$('wName').addEventListener('input',function(){d.name=this.value});
-  if(k===1||k===2||k===3)bindFields(root,c);
+  if(k===1)bindFields(root,c,function(kk){if(kk==='type')renderWizard()});
+  if(k===2||k===3)bindFields(root,c);
   if(k===4)bindPrefs(root,d.prefs);
   if(k===5)bindHome(root,function(){return d.home},function(v){d.home=v});
   if($('wBack'))$('wBack').onclick=function(){wz.step--;renderWizard()};
@@ -848,7 +858,7 @@ function overpassFetch(q,label,quiet){
   }
   return next();
 }
-function fetchRoads(bb){return overpassFetch(GC.overpassQuery(bb),'road data')}
+function fetchRoads(bb){return overpassFetch(GC.overpassQuery(bb,status&&status.rules),'road data')}
 
 // ---------- Places (search + reachability by the active cart) ----------
 var placesLayer=null,places=[],placeSel=null,searchToken=0,searchOrigin=null,reachCache={},graphs=[],photonCache={},plTimer=null,plLastQ='';
@@ -1228,7 +1238,7 @@ function navReplan(pos){
   }
   if(bb.tooBig){fail('You are too far from the destination.');return}
   function attempt(bb){
-    return overpassFetch(GC.overpassQuery(bb),'road data',true).then(function(json){
+    return overpassFetch(GC.overpassQuery(bb,status&&status.rules),'road data',true).then(function(json){
       var g=GC.parseOverpass(json),r=GC.planRoute(g,status,pos,end,{cartMph:cartMph()});
       var wider=!r.ok&&r.error==='no-legal-route'?GC.widerBbox(bp,end,bb.padIndex):null;
       if(wider)return attempt(wider);
@@ -1311,6 +1321,25 @@ $('go').onclick=function(){
   .then(function(){$('go').disabled=false;busy('')});
 };
 function colorFor(s){return s.basis==='illegal'?{color:'#d12b2b',dashArray:'2 8',weight:6}:(s.basis==='tagged'||s.basis==='posted'||s.basis==='crossing')?{color:'#1f6fd1',weight:6}:{color:'#e08a00',dashArray:'10 8',weight:6}}
+// ---------- EV charging stops (OSM amenity=charging_station along the route) ----------
+function evPlanLoad(r){
+  var box=$('evPlan'),rl=status&&status.rules;if(!box||!rl||!rl.ev||!r.coords)return;
+  var ev=rl.ev,u=ru(),cs=r.coords,s=90,w=180,n=-90,e=-180;
+  cs.forEach(function(p){s=Math.min(s,p[0]);n=Math.max(n,p[0]);w=Math.min(w,p[1]);e=Math.max(e,p[1])});
+  var bb={s:s-0.03,w:w-0.04,n:n+0.03,e:e+0.04},rk=r.distance_m/1000,over=rk>ev.usableKm;
+  var head='<b>'+(over?'⚠ Over your range: ':'⚡ ')+'</b>'+VEH.kmLabel(rk,u)+' route, usable range about '+VEH.kmLabel(ev.usableKm,u)+'.';
+  box.innerHTML=head+' Checking charging stations…';
+  overpassFetch(GC.chargingQuery(bb),'charging stations',true).then(function(json){
+    if($('evPlan')!==box)return;
+    var plan=GC.chargerPlan(cs,GC.parseChargers(json),ev.usableKm*1000,ev.fullKm*1000,3000),h=head;
+    if(routeLayer&&mapOk)plan.stops.forEach(function(st,i){L.marker([st.station.lat,st.station.lon],{icon:L.divIcon({className:'',html:'<div style="font-size:22px">🔌</div>',iconSize:[24,24]})}).addTo(routeLayer).bindTooltip('Charge stop '+(i+1)+': '+st.station.name)});
+    if(!plan.needed)h+=' No charging needed. '+plan.nearby.length+' charging station'+(plan.nearby.length===1?'':'s')+' within 3 km of the route.';
+    else if(!plan.ok)h+=' <span class="warn">'+esc(plan.message)+'</span>';
+    else h+=' Suggested stops:<ol class="steps">'+plan.stops.map(function(st){return'<li>'+esc(st.station.name)+(st.station.operator&&st.station.operator!==st.station.name?' ('+esc(st.station.operator)+')':'')+' · '+VEH.kmLabel(st.alongM/1000,u)+' from start, '+DIR.fmtDist(st.offM,u)+' off the route'+(st.station.sockets.length?' · '+esc(st.station.sockets.slice(0,3).join(', ')):'')+'</li>'}).join('')+'</ol>';
+    h+='<div class="mut">Charging stations come from OpenStreetMap and may be missing, full or out of service. Check an EV charging app before you rely on a stop.</div>';
+    box.innerHTML=h;
+  }).catch(function(){if($('evPlan')===box)box.innerHTML=head+' Couldn\'t load charging stations right now; try again.'});
+}
 function show(r,g){
   var out=$('result');if(routeLayer)routeLayer.clearLayers();
   navReset();$('navStartPeek').style.display='none';$('dirPanel').hidden=true;
@@ -1335,6 +1364,7 @@ function show(r,g){
     var roads=[],last='';r.segments.forEach(function(s){if(s.name!==last){roads.push(s);last=s.name}});
     h+='<div class="status ok cmp"><span class="big">'+mi(r.distance_m)+' · '+fmtTime(r.time_s)+'</span> <span class="mut">at '+VEH.speedToDisplay(cartMph(),ru())+' '+ulab(ru())+'</span></div>';
     var flag=r.assumedMeters>0||r.crossings.length||(r.warnings||[]).length||!!(stateWarn(status)+euroWarn(status));
+    if(status.rules&&status.rules.ev)h+='<div id="evPlan" class="mut" style="font-size:13px;margin:4px 0"></div>';
     h+='<details class="card-more" id="resMore"><summary'+(flag?' class="flag"':'')+'>'+(flag?'⚠ ':'')+'Route details'+(flag?' and warnings':'')+'</summary>';
     h+='<div style="margin:4px 0 6px">'+esc(status.label)+'</div>';
     if(r.assumedMeters>0)h+='<p class="warn">⚠ '+Math.round(100*r.assumedMeters/r.distance_m)+'% of this route ('+mi(r.assumedMeters)+', orange dashed) is <b>assumed</b> legal: the speed limit was missing in the map data'+(status.rules&&status.rules.cls==='veh'?'':' or, for golf carts, the local golf cart designation is unverified')+'. Look for posted signs.</p>';
@@ -1352,6 +1382,7 @@ function show(r,g){
   if(EXTRA)h+='</details>';
   out.innerHTML=h;
   navBind();
+  if(r.ok)evPlanLoad(r);
   var nsb=$('navStart');if(nsb)nsb.onclick=function(){startNavigation(SIMQ)};
   $('navStartPeek').style.display=r.ok&&navDirs&&navDirs.steps.length?'block':'none';
   $('resCard').scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1514,7 +1545,7 @@ function refresh(force){
   hint.style.display='block';
   var b=map.getBounds(),pl=GC.viewportPlan({s:b.getSouth(),w:b.getWest(),n:b.getNorth(),e:b.getEast()},map.getZoom());
   if(!pl.ok){clear();lastKey='';say(pl.reason==='zoom'?'Zoom in to see road legality':'Zoom in more: area too large');return}
-  var q=GC.overpassQuery(pl.bb),key=q+'|'+JSON.stringify(st.rules);
+  var q=GC.overpassQuery(pl.bb,(status&&status.ok?status:st).rules),key=q+'|'+JSON.stringify(st.rules);
   if(!force&&key===lastKey)return;
   var my=++token;say('loading…');
   overpassFetch(q,'road legality').then(function(j){
