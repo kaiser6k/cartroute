@@ -118,6 +118,51 @@ var NAV = (function () {
     return out;
   }
 
+  // ---- voice guidance: mode-aware wording, start summary, continue, legality notices ----
+  var VERBS = { drive: ['Drive', 'driving'], ride: ['Ride', 'riding'], walk: ['Walk', 'walking'], bike: ['Cycle', 'cycling'] };
+  function modeOf(type) { return type === 'foot' ? 'walk' : type === 'bicycle' ? 'bike' : (type === 'moped' || type === 'motorcycle' || type === 'escooter') ? 'ride' : 'drive'; }
+  function modeText(t, mode) { var v = VERBS[mode] || VERBS.drive; return String(t || '').replace(/^Head\b/, v[0]); }
+  function spokenDur(sec) { var m = Math.max(1, Math.round((Number(sec) || 0) / 60)); if (m < 60) return m + (m === 1 ? ' minute' : ' minutes'); var h = Math.floor(m / 60), r = m % 60; return h + (h === 1 ? ' hour' : ' hours') + (r ? ' ' + r + (r === 1 ? ' minute' : ' minutes') : ''); }
+  function startSummary(dirs, route, unit, mode) {
+    var st = dirs && dirs.steps && dirs.steps[0], t = 'Starting route. ' + spokenDist(dirs ? dirs.total_m : 0, unit) + (route && route.time_s ? ', about ' + spokenDur(route.time_s) : '') + '.';
+    return st ? t + ' ' + modeText(ttsClean(st.text), mode) : t;
+  }
+  function continueText(d, unit, mode, road) {
+    var v = VERBS[mode] || VERBS.drive, r = road && !/^the (road|service road)$/.test(road) ? ' on ' + ttsClean(road) : '';
+    return 'Continue ' + v[1] + r + ' for ' + spokenDist(d, unit);
+  }
+  // seg: route segment {name, basis, lsvOnly}; returns text or ''
+  function legalNotice(seg, mode) {
+    if (!seg) return '';
+    var nm = seg.name && !/^\(unnamed/.test(seg.name) ? ttsClean(seg.name) : 'this road';
+    if (seg.basis === 'illegal') return 'Warning: ' + nm + ' is not legal for your vehicle';
+    if (seg.lsvOnly) return 'Caution: ' + nm + ' is only legal for a registered street-legal LSV';
+    if (seg.basis === 'assumed') return mode === 'walk' ? 'Caution: no sidewalk is mapped on ' + nm + '. Watch for traffic' : 'Caution: ' + nm + ' is only assumed legal. Check local signs';
+    return '';
+  }
+  function segIndexAt(segs, along) {
+    if (!segs || !segs.length) return -1;
+    var c = 0; for (var i = 0; i < segs.length; i++) { c += segs[i].len || 0; if (along <= c) return i; }
+    return segs.length - 1;
+  }
+  // voice prefs + voice choice (speech text is English; the accent follows region/units)
+  function normVoice(v) {
+    v = v && typeof v === 'object' ? v : {};
+    var rate = Number(v.rate), vol = Number(v.volume);
+    return { on: v.on !== false, voiceURI: typeof v.voiceURI === 'string' ? v.voiceURI.slice(0, 200) : '', rate: isFinite(rate) && rate >= 0.5 && rate <= 2 ? Math.round(rate * 100) / 100 : 1,
+      volume: isFinite(vol) && vol >= 0 && vol <= 1 ? Math.round(vol * 100) / 100 : 1 };
+  }
+  function voiceLang(unit, country) { return country || unit === 'kmh' ? 'en-GB' : 'en-US'; }
+  function pickVoice(voices, uri, lang) {
+    voices = voices || []; if (!voices.length) return null;
+    var i; if (uri) for (i = 0; i < voices.length; i++) if (voices[i].voiceURI === uri) return voices[i];
+    var L = String(lang || 'en-US').toLowerCase(), base = L.split('-')[0];
+    function norm(x) { return String(x || '').toLowerCase().replace('_', '-'); }
+    var exact = voices.filter(function (v) { return norm(v.lang) === L; }), same = voices.filter(function (v) { return norm(v.lang).split('-')[0] === base; });
+    var pref = function (a) { return a.filter(function (v) { return v.default; })[0] || a.filter(function (v) { return v.localService; })[0] || a[0]; };
+    return exact.length ? pref(exact) : same.length ? pref(same) : null;
+  }
+
   // ---- off-route counting. st = {count, inFlight, lastT}. returns 'ok' | 'off' | 'reroute'
   function newOffState() { return { count: 0, inFlight: false, lastT: -1e12 }; }
   function offRouteStep(st, offM, t) {
@@ -158,12 +203,12 @@ var NAV = (function () {
 
   // ---- the session: feed GPS fixes, get everything the UI needs
   function createSession(o) {
-    var s = { dirs: o.dirs, route: o.route, unit: o.unit || 'mph', planned: 0, maxAlong: 0, prev: null, speed: 0, heading: null, hdRef: null,
+    var s = { dirs: o.dirs, route: o.route, unit: o.unit || 'mph', mode: o.mode || 'drive', lastIdx: null, segIdx: -1, warned: {}, planned: 0, maxAlong: 0, prev: null, speed: 0, heading: null, hdRef: null,
       ann: newAnnouncer(), off: newOffState(), lowAcc: 0, done: false, lastT: null, rerouted: 0 };
     function setPlanned() { s.planned = s.route && s.route.time_s ? s.dirs.total_m / s.route.time_s : 0; }
     setPlanned();
     s.setRoute = function (dirs, route, opts) {
-      s.dirs = dirs; s.route = route; s.maxAlong = 0; s.ann = newAnnouncer(); s.off.count = 0; s.off.inFlight = false; s.done = false; setPlanned();
+      s.dirs = dirs; s.route = route; s.maxAlong = 0; s.ann = newAnnouncer(); s.lastIdx = null; s.segIdx = -1; s.off.count = 0; s.off.inFlight = false; s.done = false; setPlanned();
       if (opts && opts.rerouted) s.rerouted++;
       return opts && opts.rerouted ? [{ tier: 'info', text: 'Route updated', urgent: true }] : [];
     };
@@ -211,6 +256,20 @@ var NAV = (function () {
         var od = offRouteStep(s.off, P.off, t);
         if (od === 'reroute') { out.reroute = true; out.say.push({ tier: 'reroute', text: 'You are off route. Rerouting', urgent: true }); }
         out.say = out.say.concat(announce(s.ann, P, s.dirs.steps, s.unit, s.speed, s.planned));
+        if (!P.offRoute) {
+          // after a maneuver, when the next one is far away: "Continue driving on X for 2 miles"
+          var ni = P.nextIndex, th = leadDistances(s.speed, s.planned);
+          if (s.lastIdx != null && ni !== s.lastIdx && P.distToNext > th.far + 150) {
+            var cur = s.dirs.steps[P.stepIndex]; out.say.push({ tier: 'continue', text: continueText(P.distToNext, s.unit, s.mode, cur && cur.road) });
+          }
+          s.lastIdx = ni;
+          // entering a road whose legality is only assumed (or LSV-only): warn once per road name
+          var si = segIndexAt(s.route && s.route.segments, P.along);
+          if (si !== s.segIdx) {
+            s.segIdx = si; var sg = s.route.segments[si], txt = legalNotice(sg, s.mode), key = sg && (sg.name + '|' + sg.basis + '|' + !!sg.lsvOnly);
+            if (txt && !s.warned[key] && (sg.len || 0) >= 100) { s.warned[key] = true; out.say.push({ tier: 'legal', text: txt }); }
+          }
+        }
       }
       out.view = s.view(P, pos, t);
       return out;
@@ -236,6 +295,7 @@ var NAV = (function () {
   }
 
   return { MAX_ACC_M: MAX_ACC_M, OFF_M: OFF_M, OFF_FIXES: OFF_FIXES, REROUTE_MIN_MS: REROUTE_MIN_MS, leadDistances: leadDistances, ttsClean: ttsClean, spokenDist: spokenDist, speedLabel: speedLabel, iconKey: iconKey, arrowSvg: arrowSvg, limitAt: limitAt, speedNum: speedNum, speedState: speedState,
+    modeOf: modeOf, modeText: modeText, spokenDur: spokenDur, startSummary: startSummary, continueText: continueText, legalNotice: legalNotice, segIndexAt: segIndexAt, normVoice: normVoice, voiceLang: voiceLang, pickVoice: pickVoice, VERBS: VERBS,
     newAnnouncer: newAnnouncer, announce: announce, silent: silent, newOffState: newOffState, offRouteStep: offRouteStep, eta: eta, fmtDur: fmtDur, createWakeLock: createWakeLock,
     createSession: createSession, simulateFixes: simulateFixes };
 })();

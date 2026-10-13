@@ -26,7 +26,14 @@ var PR = (function () {
     for (var k in over) c[k] = over[k];
     return c;
   }
-  function defaultPrefs() { return { night: 'day', designatedLimit: 25, strict: false, allowCrossing: true, basemap: 'auto', tileProvider: 'esri', units: 'auto' }; }
+  // voice guidance prefs (same rules as NAV.normVoice): on by default, rate 0.5-2, volume 0-1, optional voiceURI
+  function normVoice(v) {
+    v = v && typeof v === 'object' ? v : {};
+    var rate = Number(v.rate), vol = Number(v.volume);
+    return { on: v.on !== false, voiceURI: typeof v.voiceURI === 'string' ? v.voiceURI.slice(0, 200) : '', rate: isFinite(rate) && rate >= 0.5 && rate <= 2 ? Math.round(rate * 100) / 100 : 1,
+      volume: isFinite(vol) && vol >= 0 && vol <= 1 ? Math.round(vol * 100) / 100 : 1 };
+  }
+  function defaultPrefs() { return { night: 'day', designatedLimit: 25, strict: false, allowCrossing: true, basemap: 'auto', tileProvider: 'esri', units: 'auto', voice: normVoice(null) }; }
   function defaultProfile() {
     var c = defaultCart();
     return { version: VERSION, name: '', carts: [c], activeCartId: c.id, prefs: defaultPrefs(), home: null, work: null, recents: [], setupDone: false, createdAt: new Date().toISOString() };
@@ -84,7 +91,7 @@ var PR = (function () {
         strict: pr.strict === true, allowCrossing: pr.allowCrossing !== false,
         basemap: ['auto', 'street', 'satellite', 'topo', 'dark'].indexOf(pr.basemap) >= 0 ? pr.basemap : 'auto',
         tileProvider: ['esri', 'carto', 'osm'].indexOf(pr.tileProvider) >= 0 ? pr.tileProvider : 'esri',
-        units: ['auto', 'kmh', 'mph'].indexOf(pr.units) >= 0 ? pr.units : 'auto' },
+        units: ['auto', 'kmh', 'mph'].indexOf(pr.units) >= 0 ? pr.units : 'auto', voice: normVoice(pr.voice) },
       home: normHome(p.home), work: normWork(p.work), recents: normRecents(p.recents), setupDone: p.setupDone === true,
       createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString()
     };
