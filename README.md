@@ -177,3 +177,20 @@ Edit the sources, then run `sh build.sh`, which inlines `states.js, europe.js, v
 * The map area starts at 700 m padding around the trip and widens automatically to 2 km, then 5 km when no route is found (capped at 450 km2).
 * Start and end snap to the nearest **allowed** road for the active vehicle; if that fails, to the main strongly connected network (avoids one-way stubs and islands). If the start or end sits on a road the vehicle cannot use, the app says so and states the snap distance.
 * Ramp end-nodes no longer cut surface roads for vehicles that may not use freeways.
+
+## Voice guidance (added Oct 2026)
+
+Voice guidance is on by default when navigation starts and uses the browser's `speechSynthesis`; nothing is sent to a server.
+
+* **Settings → Driving preferences → 🔊 Voice guidance:** an on/off toggle, a voice picker (English voices from `speechSynthesis.getVoices()`, or Automatic), speed (0.5–2×), volume, and **▶ Test voice**. Saved in the profile as `prefs.voice = {on, voiceURI, rate, volume}` and kept by export/import.
+* **Accent:** spoken text is English. Automatic picks an en-US voice for mph/US and an en-GB voice for km/h or Europe. A chosen voice always wins. Distances follow the Units setting (feet/miles or metres/kilometres).
+* **Nav screen:** the **🔊 Voice / 🔇 Muted** button (`#nvMute`) mutes or unmutes and saves the choice.
+* **iOS:** Safari only lets speech start after a tap, so the first tap anywhere plays a silent utterance, and the start announcement is spoken inside the Start tap.
+* **What it says** (`nav.js`):
+  * At start, a summary: "Starting route. 2.5 miles, about 5 minutes. Drive west on …".
+  * Far, near and at-turn prompts as before.
+  * "Continue driving on X for 1.1 miles" after a maneuver when the next one is far away.
+  * When off route, "You are off route. Rerouting", then "Route updated. 1.8 miles to go, about 4 minutes".
+  * A one-time caution when you enter a road (100 m or longer) whose legality is only assumed, that is LSV-only, or, when walking, that has no mapped sidewalk.
+  * "You have arrived" at the end.
+* **Wording by mode:** drive (cars, carts, trucks, ATVs), ride (moped, motorcycle, e-scooter), cycle (bicycle), walk (pedestrian).

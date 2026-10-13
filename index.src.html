@@ -217,6 +217,7 @@ body.nvnight #dirPanel{--card:#202124;--fg:#e8eaed;--line:#3c4043;--mut:#9aa0a6;
 @media (max-height:480px){.nvdist{font-size:28px}.nvinstr{font-size:17px}.nvthen{display:none}.nvsum #nvTime{font-size:22px}}
 .unitsq{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px}.unitsq select{width:auto;min-height:32px;padding:3px 8px;font-size:13px}
 .dimrow{gap:6px;margin-top:6px}.dimrow input{min-width:0}
+.vbox{margin-top:12px;border-top:1px solid rgba(127,127,127,.25);padding-top:8px}.vbox input[type=range]{width:100%}#nvMute{white-space:nowrap}#nvMute.muted{opacity:.85;outline:2px solid #d12b2b}
 </style>
 </head>
 <body>
@@ -661,7 +662,7 @@ function renderSettings(msg){
      (c.id!==profile.activeCartId?'<button data-act="use" data-id="'+c.id+'">Use this cart</button>':'')+'<button data-act="edit" data-id="'+c.id+'">Edit</button>'+(profile.carts.length>1?'<button class="danger" data-act="del" data-id="'+c.id+'">Delete</button>':'')+'</div></div>';
   });
   h+='<button id="addCart" style="width:100%;margin-top:6px">＋ Add a cart</button><div id="editor"></div></div>';
-  h+='<div class="card"><h2>Driving preferences</h2>'+prefsFrag(profile.prefs,true)+'</div>';
+  h+='<div class="card"><h2>Driving preferences</h2>'+prefsFrag(profile.prefs,true)+voiceFrag()+'</div>';
   h+='<div class="card"><h2>Home area</h2>'+homeFrag(profile.home)+'</div>';
   h+='<div class="card"><h2>Your data</h2><button id="rerun" style="width:100%">Re-run setup wizard</button><button id="export" style="width:100%;margin-top:8px">Export profile (JSON)</button>'+
    '<textarea id="ioText" placeholder="Exported JSON shows here. To import, paste a profile here (or choose a file) and tap Import." style="margin-top:8px"></textarea>'+
@@ -675,6 +676,7 @@ function renderSettings(msg){
   prefCard.querySelectorAll('[data-k]').forEach(function(el){var k=el.getAttribute('data-k');
     function hnd(){profile.prefs[k]=el.type==='checkbox'?el.checked:(k==='designatedLimit'?+el.value:el.value);persist();if(k==='basemap'||k==='tileProvider')applyBasemap(true);if(k==='units'){applyUnits();var q=$('unitsQuick');if(q)q.value=profile.prefs.units}}
     el.addEventListener('change',hnd)});
+  bindVoice();
   bindHome(root.querySelectorAll('.card')[3],function(){return profile.home},function(v){profile.home=v;persist()});
   root.querySelectorAll('[data-act]').forEach(function(b){b.onclick=function(){
     var id=b.dataset.id,a=b.dataset.act;
@@ -1036,10 +1038,40 @@ var NV={on:false,sess:null,watch:null,simTimer:null,simFixes:null,simI:0,follow:
 var SIMQ=/[?&]sim=(\d*)/.test(location.search),SIMX=(function(){var m=/[?&]simx=([\d.]+)/.exec(location.search);return m?Math.max(0.5,Math.min(60,+m[1]||5)):5})();
 function nvPref(k,d){try{var v=ls&&ls.getItem('cartroute.'+k);return v==null?d:v}catch(e){return d}}
 function nvSetPref(k,v){try{if(ls)ls.setItem('cartroute.'+k,v)}catch(e){}}
-function nvSpeak(t,urgent){
-  if(!NV.voice||!t)return;
-  try{var ss=window.speechSynthesis;if(!ss)return;if(urgent||ss.pending)ss.cancel();var u=new SpeechSynthesisUtterance(t);u.lang=(navigator.language||'en-US');u.rate=1;u.volume=1;ss.speak(u)}catch(e){}
+// ---------- voice guidance (speechSynthesis) ----------
+function vPrefs(){return profile&&profile.prefs&&profile.prefs.voice?profile.prefs.voice:NAV.normVoice(null)}
+function vLang(){return NAV.voiceLang(ru(),curCountry())}
+function vVoices(){try{return window.speechSynthesis?window.speechSynthesis.getVoices()||[]:[]}catch(e){return[]}}
+function vSay(t,urgent,force){
+  if(!t)return false;
+  try{var ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined')return false;var p=vPrefs();if(!force&&!p.on)return false;
+    if(urgent||ss.pending)ss.cancel();var u=new SpeechSynthesisUtterance(t),lang=vLang(),v=NAV.pickVoice(vVoices(),p.voiceURI,lang);
+    u.lang=v?v.lang:lang;if(v)u.voice=v;u.rate=p.rate;u.volume=p.volume;ss.speak(u);return true}catch(e){return false}
 }
+function nvSpeak(t,urgent){if(!NV.voice||!t)return;vSay(t,urgent,true)}
+// iOS Safari only allows speech after a user gesture: speak a silent utterance on the first tap so later prompts play
+var vUnlocked=false;
+function vUnlock(){if(vUnlocked)return;vUnlocked=true;try{var ss=window.speechSynthesis;if(ss&&typeof SpeechSynthesisUtterance!=='undefined'){var u=new SpeechSynthesisUtterance(' ');u.volume=0;ss.speak(u)}}catch(e){}}
+['touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,vUnlock,{once:true,capture:true})});
+function voiceFrag(){var p=vPrefs(),ok=!!window.speechSynthesis;
+  return'<details class="vbox" id="voiceBox"'+(ok?'':' open')+'><summary><b>🔊 Voice guidance</b> <span class="mut">'+(ok?(p.on?'on':'muted'):'not supported in this browser')+'</span></summary>'+
+  (ok?'<label class="chk"><input type="checkbox" id="vOn"'+(p.on?' checked':'')+'> Speak directions during navigation</label>'+
+  '<label for="vVoice">Voice</label><select id="vVoice"></select>'+
+  '<div class="row"><div><label for="vRate">Speed <span id="vRateV">'+p.rate.toFixed(1)+'×</span></label><input type="range" id="vRate" min="0.5" max="2" step="0.1" value="'+p.rate+'"></div>'+
+  '<div><label for="vVol">Volume <span id="vVolV">'+Math.round(p.volume*100)+'%</span></label><input type="range" id="vVol" min="0" max="1" step="0.05" value="'+p.volume+'"></div></div>'+
+  '<button type="button" id="vTest" style="margin-top:8px">▶ Test voice</button> <span class="mut" id="vNote" style="font-size:12px">Accent follows your region and units ('+esc(vLang())+'). Distances use your units setting.</span>':
+  '<p class="mut">Your browser has no speech synthesis, so turn-by-turn prompts are shown on screen only.</p>')+'</details>'}
+function vFillVoices(){var sel=$('vVoice');if(!sel)return;var p=vPrefs(),lang=vLang(),vs=vVoices().filter(function(v){return/^en/i.test(v.lang)}),auto=NAV.pickVoice(vVoices(),'',lang);
+  sel.innerHTML='<option value="">Automatic'+(auto?' ('+esc(auto.name)+')':'')+'</option>'+vs.map(function(v){return'<option value="'+esc(v.voiceURI)+'"'+(v.voiceURI===p.voiceURI?' selected':'')+'>'+esc(v.name+' · '+v.lang)+'</option>'}).join('')}
+function bindVoice(){if(!$('vOn'))return;var p=profile.prefs.voice;
+  vFillVoices();try{window.speechSynthesis.addEventListener('voiceschanged',vFillVoices)}catch(e){}
+  $('vOn').onchange=function(){p.on=this.checked;persist()};
+  $('vVoice').onchange=function(){p.voiceURI=this.value;persist();vSay(vTestText(),true,true)};
+  $('vRate').oninput=function(){p.rate=Math.round(+this.value*10)/10;$('vRateV').textContent=p.rate.toFixed(1)+'×';persist()};
+  $('vVol').oninput=function(){p.volume=Math.round(+this.value*100)/100;$('vVolV').textContent=Math.round(p.volume*100)+'%';persist()};
+  $('vTest').onclick=function(){if(!vSay(vTestText(),true,true))$('vNote').textContent='Could not play speech. Check that your phone is not on silent.'};
+}
+function vTestText(){var m=NAV.modeOf(cart().type);return'In '+NAV.spokenDist(ru()==='kmh'?300:321.9,ru())+', turn right onto Main Street. '+NAV.continueText(ru()==='kmh'?2000:1609.344*1.2,ru(),m,'')}
 function nvMsg(t,bad){var m=$('nvMsg');if(!t){m.hidden=true;m.textContent='';return}m.hidden=false;m.textContent=t;m.className='nvmsg'+(bad?' bad':'');nvLayout()}
 function nvLayout(){
   var de=document.documentElement,tp=$('nvTop'),bt=$('nvBot'),th=tp.offsetHeight,bh=bt.offsetHeight;
@@ -1051,7 +1083,7 @@ function nvApplyTheme(){
   document.body.classList.toggle('nvnight',night);
   $('nvTheme').textContent=night?'☀':'🌙';
 }
-function nvApplyVoice(){$('nvMute').textContent=NV.voice?'🔊':'🔇';$('nvMute').setAttribute('aria-pressed',NV.voice?'true':'false');$('nvMute').setAttribute('aria-label',NV.voice?'Voice on, tap to mute':'Voice off, tap to turn on')}
+function nvApplyVoice(){$('nvMute').textContent=NV.voice?'🔊 Voice':'🔇 Muted';$('nvMute').classList.toggle('muted',!NV.voice);$('nvMute').setAttribute('aria-pressed',NV.voice?'true':'false');$('nvMute').setAttribute('aria-label',NV.voice?'Voice on, tap to mute':'Voice off, tap to turn on')}
 function nvWakeNote(){
   var el=$('nvWake'),w=NV.wl;
   if(!w)el.textContent='';
@@ -1194,15 +1226,15 @@ function startNavigation(simulate){
   if(NV.on||!navDirs||!navRoute||!navDirs.steps.length)return;
   clearTimeout(NV.endTimer);
   NV.on=true;NV.sim=false;NV.follow=true;NV.last=null;NV.lastFixAt=0;NV.lostSaid=false;NV.failSaid=false;NV.replanning=false;NV.msgKind='';
-  NV.voice=nvPref('navVoice','1')!=='0';NV.theme=nvPref('navTheme','auto');
+  NV.voice=vPrefs().on;NV.theme=nvPref('navTheme','auto');
   stopFollow();
   if(mapOk){if(posMarker){map.removeLayer(posMarker);posMarker=null}if(posCircle){map.removeLayer(posCircle);posCircle=null}if(navLayer)navLayer.clearLayers()}
   document.body.classList.add('navigating');document.body.classList.remove('nvmenu');$('navView').hidden=false;
   nvApplyTheme();nvApplyVoice();
   // iOS only lets speech start from a tap: speak right now, inside this click handler
   var st=navDirs.steps[0];
-  nvSpeak('Navigation started. '+NAV.ttsClean(st.text),true);
-  NV.sess=NAV.createSession({dirs:navDirs,route:navRoute,unit:ru()});
+  nvSpeak(NAV.startSummary(navDirs,navRoute,ru(),NAV.modeOf(cart().type)),true);
+  NV.sess=NAV.createSession({dirs:navDirs,route:navRoute,unit:ru(),mode:NAV.modeOf(cart().type)});
   nvRender({view:NV.sess.view(null,null,Date.now()),offRoute:false});
   NV.wl=NAV.createWakeLock(navigator);NV.wl.acquire().then(nvWakeNote);nvWakeNote();
   if(mapOk){
@@ -1252,7 +1284,7 @@ function navReplan(pos){
     var say=NV.sess.setRoute(navDirs,navRoute,{rerouted:true});
     NV.replanning=false;NV.failSaid=false;NV.msgKind='';nvMsg('Route updated');setTimeout(function(){if(NV.on&&!NV.replanning)nvMsg('')},2500);
     nvRender({view:NV.sess.view(null,pos,Date.now()),offRoute:false});
-    nvSpeak(say.map(function(s){return s.text}).join('. '),true);
+    nvSpeak(say.map(function(s){return s.text}).join('. ')+'. '+NAV.spokenDist(navDirs.total_m,ru())+' to go'+(navRoute.time_s?', about '+NAV.spokenDur(navRoute.time_s):''),true);
   }).catch(function(e){if(NV.on)fail('Could not load road data.')});
 }
 // ---------- floating right-side turn panel ----------
@@ -1275,11 +1307,11 @@ function nvInit(){
   dpInit();
   $('navStartPeek').onclick=function(){startNavigation(SIMQ)};
   $('nvEnd').onclick=function(){endNavigation(false)};
-  $('nvMute').onclick=function(){NV.voice=!NV.voice;nvSetPref('navVoice',NV.voice?'1':'0');nvApplyVoice();if(!NV.voice){try{window.speechSynthesis.cancel()}catch(e){}}else nvSpeak('Voice on',true)};
+  $('nvMute').onclick=function(){NV.voice=!NV.voice;nvSetPref('navVoice',NV.voice?'1':'0');if(profile&&profile.prefs.voice){profile.prefs.voice.on=NV.voice;persist()}nvApplyVoice();if(!NV.voice){try{window.speechSynthesis.cancel()}catch(e){}}else nvSpeak('Voice on',true)};
   $('nvTheme').onclick=function(){var night=document.body.classList.contains('nvnight');NV.theme=night?'day':'night';nvSetPref('navTheme',NV.theme);nvApplyTheme()};
   $('nvRecenter').onclick=nvRecenter;$('nvOverview').onclick=nvOverview;
   $('nvMenu').onclick=function(){var on=document.body.classList.toggle('nvmenu');$('nvMenu').setAttribute('aria-pressed',on?'true':'false');if(mapOk)setTimeout(function(){try{map.invalidateSize()}catch(e){}},50)};
-  $('nvSim').onclick=function(ev){ev.preventDefault();if(!NV.on)return;NV.sim=true;NV.sess=NAV.createSession({dirs:navDirs,route:navRoute,unit:ru()});nvStartSim()};
+  $('nvSim').onclick=function(ev){ev.preventDefault();if(!NV.on)return;NV.sim=true;NV.sess=NAV.createSession({dirs:navDirs,route:navRoute,unit:ru(),mode:NAV.modeOf(cart().type)});nvStartSim()};
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&NV.on&&NV.wl)NV.wl.reacquire().then(nvWakeNote)});
   window.addEventListener('resize',function(){if(NV.on){nvLayout();if(mapOk)map.invalidateSize()}});
 }
